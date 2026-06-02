@@ -1,0 +1,50 @@
+<div class="scene">
+    {% if scene.intro_video or scene.ambient_video %}
+        <div class="video-region"
+             x-data='videoPlayer({
+                hasIntro: {{ (scene.intro_video is not none) | tojson }},
+                ambient: {{ scene.ambient_video | tojson }}
+             })'>
+            <video x-ref="player"
+                   src="{{ scene.intro_video or scene.ambient_video }}"
+                   @ended="onEnded"
+                   {% if not scene.intro_video and scene.ambient_video %}loop{% endif %}
+                   autoplay muted playsinline></video>
+        </div>
+    {% else %}
+        <div class="video-region video-empty"></div>
+    {% endif %}
+
+    <div class="text-region">
+        {% if evaluation %}
+            <div class="feedback feedback-{{ evaluation.verdict }}">
+                <div class="feedback-header">
+                    <span class="feedback-verdict">{{ evaluation.verdict | upper }}</span>
+                    {% if prior_action %}
+                        <span class="feedback-action">&ldquo;{{ prior_action }}&rdquo;</span>
+                    {% endif %}
+                </div>
+                <p class="feedback-explanation">{{ evaluation.explanation }}</p>
+                <p class="feedback-coaching"><strong>Coaching:</strong> {{ evaluation.coaching }}</p>
+            </div>
+        {% endif %}
+
+        <p class="narrative">{{ scene.narrative }}</p>
+
+        {% if not scene.is_terminal and choices %}
+            <form class="choices"
+                  hx-post="/action/{{ scene.id }}"
+                  hx-target="#scene-container"
+                  hx-swap="innerHTML">
+                {% for choice in choices %}
+                    <button class="choice"
+                            type="submit"
+                            name="action_text"
+                            value="{{ choice.text }}">
+                        {{ choice.text }}
+                    </button>
+                {% endfor %}
+            </form>
+        {% endif %}
+    </div>
+</div>

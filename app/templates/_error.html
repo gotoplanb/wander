@@ -1,0 +1,23 @@
+<div class="scene">
+    <div class="video-region video-empty"></div>
+    <div class="text-region">
+        <h2 class="error-title">AI call failed</h2>
+        <p class="error-meta">
+            <code>{{ error_type }}</code> from
+            <code>{{ backend_description }}</code>
+        </p>
+        <pre class="error-message">{{ error_message }}</pre>
+        <p class="error-hint">
+            {% if backend == "ollama" %}
+                Set <code>OLLAMA_HOST</code> and <code>WANDERER_MODEL</code>, or switch
+                with <code>WANDERER_BACKEND=conduct</code> plus <code>CONDUCT_URL</code>,
+                <code>CONDUCT_API_KEY</code>, and <code>CONDUCT_TASK_TYPE</code>.
+            {% else %}
+                Check <code>CONDUCT_URL</code>, <code>CONDUCT_API_KEY</code>, and
+                <code>CONDUCT_TASK_TYPE</code>. If the model returned unexpected text,
+                the raw response is shown above.
+            {% endif %}
+        </p>
+        <button class="choice" type="button" onclick="location.reload()">Reload</button>
+    </div>
+</div>
