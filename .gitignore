@@ -6,5 +6,7 @@ venv/
 .DS_Store
 *.sqlite
 *.sqlite-journal
+# Seeded example episodes are content, not transient state — track them.
+!episodes/*/episode.sqlite
 wanderer-session.json
 .env
