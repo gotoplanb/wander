@@ -6,3 +6,5 @@ venv/
 .DS_Store
 *.sqlite
 *.sqlite-journal
+wanderer-session.json
+.env
