@@ -1,14 +1,14 @@
-"""Seed `episodes/bosun/episode.sqlite`.
+"""Seed `episodes/quartermaster/episode.sqlite`.
 
 A pirate episode. The captain of a small armed ship has died of fever off
-the Windward Islands in 1684. The player is the ship's bosun and next in
+the Windward Islands in 1684. The player is the ship's quartermaster and next in
 line. Authority, the Account, a sealed chart, a Spanish sail on the
 horizon, a buried cache, a long return voyage with gold under every
 bunk, and a free-port harbor that will or will not give them a captain's
 chair.
 
 Public-domain Golden Age of Piracy tropes only — no characters or plot
-beats borrowed from existing works. Generic role names (the bosun, the
+beats borrowed from existing works. Generic role names (the quartermaster, the
 boatswain, the cook, the gunner, the captain) and a fictional ship
 (the Margaret-Ann).
 
@@ -26,7 +26,7 @@ import sqlite3
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent.parent
-EPISODE_DIR = REPO_ROOT / "episodes" / "bosun"
+EPISODE_DIR = REPO_ROOT / "episodes" / "quartermaster"
 DB_PATH = EPISODE_DIR / "episode.sqlite"
 
 V = {
@@ -80,11 +80,11 @@ CREATE INDEX idx_transitions_scene ON transitions(scene_id);
 """
 
 EPISODE_META = {
-    "id": "bosun",
-    "title": "The Bosun's Account",
+    "id": "quartermaster",
+    "title": "The Quartermaster's Account",
     "description": (
         "The captain of a small armed sloop has died of fever off the Windward "
-        "Islands. You are the bosun, next in line. There is a chart, a Spanish "
+        "Islands. You are the quartermaster, next in line. There is a chart, a Spanish "
         "sail on the horizon, a cache to dig up, gold to divide, and a long "
         "voyage home. Lead them well and the harbor gives you a captain's "
         "chair."
@@ -97,11 +97,11 @@ EPISODE_META = {
         "Age of Piracy tropes only — the Account (ship's articles), shares of "
         "prizes, marooning, the dead captain, a sealed chart, a Spanish sail on "
         "the horizon, a free port that asks no questions if the manifest is "
-        "tidy. The PLAYER is the ship's bosun — second-in-command after the "
+        "tidy. The PLAYER is the ship's quartermaster — second-in-command after the "
         "captain, NOT the captain's relative, NOT a passenger, NOT a "
-        "guest. The bosun has been with the ship for years and knows every "
+        "guest. The quartermaster has been with the ship for years and knows every "
         "man aboard by name. The captain has just died of fever; the first "
-        "mate was landed sick at the last port. The bosun is therefore next in "
+        "mate was landed sick at the last port. The quartermaster is therefore next in "
         "line. Other crew positions named in the episode: boatswain, cook, "
         "gunner, lookout — these are generic roles, not characters with "
         "biographies. Do NOT invent additional plot characters (a daughter, a "
@@ -136,7 +136,7 @@ SCENES = [
             "slope, a chart wrapped in oilskin half tucked under the cot, and a "
             "small key on a leather cord around his neck. Above you on the main "
             "deck, you can hear the crew not speaking. The first mate was put "
-            "ashore sick at the last port. You are the bosun, and you are next."
+            "ashore sick at the last port. You are the quartermaster, and you are next."
         ),
         "visual_description": (
             "A small captain's cabin lit by a swinging brass lamp, late morning, "
@@ -167,7 +167,7 @@ SCENES = [
         "outcome": None,
         "transitions": [
             {
-                "condition": "the bosun goes to the deck to face the crew and call the Account",
+                "condition": "the quartermaster goes to the deck to face the crew and call the Account",
                 "next_scene_id": "the_account",
             },
         ],
@@ -188,7 +188,7 @@ SCENES = [
         ),
         "visual_description": (
             "The forecastle at noon. Sunlight harsh, the deck planks bleached. "
-            "The bosun (the player) standing on the half-deck above the men, "
+            "The quartermaster (the player) standing on the half-deck above the men, "
             "the sealed Account in their hand. Eighteen sailors below, in worn "
             "linen shirts, sashes, headcloths — a few smoking clay pipes. "
             "Doyle, the boatswain, broad-shouldered and shaven-skulled, stands "
@@ -197,14 +197,14 @@ SCENES = [
             "Caribbean horizon all around."
         ),
         "evaluation_context": (
-            "Critical scene for crew_respect. The bosun must read the Account "
+            "Critical scene for crew_respect. The quartermaster must read the Account "
             "straight, including the unflattering part where the captain's "
-            "share becomes the bosun's by right. Good judgment: break the seal "
-            "openly, read every line without skipping the bosun's-share "
+            "share becomes the quartermaster's by right. Good judgment: break the seal "
+            "openly, read every line without skipping the quartermaster's-share "
             "clause, then ASK the crew if any man disputes it. Refusing to "
             "duck the awkward bit earns Doyle's grudging respect and the "
             "crew's. Reasonable but flawed: read the Account but quietly skip "
-            "or soften the bosun's-share clause, hoping no one notices (Doyle "
+            "or soften the quartermaster's-share clause, hoping no one notices (Doyle "
             "notices). Common mistake: defer to Doyle to read it (he will and "
             "the crew will follow him after this), or claim the captain's share "
             "without reading at all (mutiny by sundown). The flag crew_respect "
@@ -216,16 +216,16 @@ SCENES = [
         "outcome": None,
         "transitions": [
             {
-                "condition": "the bosun reads the Account straight, names their own share, and asks for any dispute",
+                "condition": "the quartermaster reads the Account straight, names their own share, and asks for any dispute",
                 "next_scene_id": "the_chart",
                 "state_delta": {"crew_respect": True},
             },
             {
-                "condition": "the bosun reads the Account but softens the inconvenient parts",
+                "condition": "the quartermaster reads the Account but softens the inconvenient parts",
                 "next_scene_id": "the_chart",
             },
             {
-                "condition": "the bosun hands the Account to Doyle or claims the share without ceremony",
+                "condition": "the quartermaster hands the Account to Doyle or claims the share without ceremony",
                 "next_scene_id": "the_chart",
             },
         ],
@@ -252,16 +252,16 @@ SCENES = [
             "handled clasp knife. Spread on the table under the brass lamp: a "
             "hand-drawn chart on heavy paper, edges browned, showing a small "
             "crescent cove and a notation in faded ink. The cook and the "
-            "boatswain Doyle stand to either side, watching the bosun (the "
+            "boatswain Doyle stand to either side, watching the quartermaster (the "
             "player) plot a course over the chart with a brass divider."
         ),
         "evaluation_context": (
             "Good judgment: open the chest WITH WITNESSES present (the cook "
             "and Doyle by the player's choice or by the player calling them "
             "in), mark the chart's existence in the ship's log, plot the "
-            "course to the cove openly. The witness rule is the bosun "
+            "course to the cove openly. The witness rule is the quartermaster "
             "establishing that nothing was palmed in private; the log entry "
-            "protects the bosun later. Reasonable but flawed: open the chest "
+            "protects the quartermaster later. Reasonable but flawed: open the chest "
             "alone, find the chart, then announce only that there is a course "
             "to set without explaining why (the crew will fill the silence "
             "with rumors of treasure that may grow in the telling). Common "
@@ -277,16 +277,16 @@ SCENES = [
         "outcome": None,
         "transitions": [
             {
-                "condition": "the bosun opens the chest with witnesses, logs the chart, plots the course openly",
+                "condition": "the quartermaster opens the chest with witnesses, logs the chart, plots the course openly",
                 "next_scene_id": "the_spanish_sail",
                 "state_delta": {"has_chart": True},
             },
             {
-                "condition": "the bosun opens the chest alone but announces a heading without the chart's source",
+                "condition": "the quartermaster opens the chest alone but announces a heading without the chart's source",
                 "next_scene_id": "the_spanish_sail",
             },
             {
-                "condition": "the bosun palms the chart in private and tells no one",
+                "condition": "the quartermaster palms the chart in private and tells no one",
                 "next_scene_id": "the_spanish_sail",
             },
         ],
@@ -310,7 +310,7 @@ SCENES = [
             "On the horizon over the bowsprit: a heavy three-masted Spanish "
             "merchantman in cream and red, and behind her a sleek warship — a "
             "fifth-rate frigate — with Spanish colors snapping at the mizzen. "
-            "Sails and water and very little else. The bosun (the player) at "
+            "Sails and water and very little else. The quartermaster (the player) at "
             "the rail with a glass, Doyle at their shoulder, the cook a step "
             "back. The crew lined along the rail, watching."
         ),
@@ -333,16 +333,16 @@ SCENES = [
         "outcome": None,
         "transitions": [
             {
-                "condition": "the bosun changes course south to lose them in the current",
+                "condition": "the quartermaster changes course south to lose them in the current",
                 "next_scene_id": "the_cove",
                 "state_delta": {"avoided_spanish": True},
             },
             {
-                "condition": "the bosun shadows the merchantman at distance hoping the frigate breaks off",
+                "condition": "the quartermaster shadows the merchantman at distance hoping the frigate breaks off",
                 "next_scene_id": "the_cove",
             },
             {
-                "condition": "the bosun orders the attack with the frigate in range",
+                "condition": "the quartermaster orders the attack with the frigate in range",
                 "next_scene_id": "ending_sunk",
             },
         ],
@@ -373,7 +373,7 @@ SCENES = [
             "scrub. Scattered white shells along the high-tide line. The "
             "longboat pulled up on the sand. The cook (wiry, sun-blackened) "
             "with a spade. Doyle (broad, shaven-skulled) with another. The "
-            "bosun (the player) holding the chart in the morning light."
+            "quartermaster (the player) holding the chart in the morning light."
         ),
         "evaluation_context": (
             "A puzzle scene. The DEAD palm is what matters — its stump is "
@@ -396,16 +396,16 @@ SCENES = [
         "outcome": None,
         "transitions": [
             {
-                "condition": "the bosun reasons the dead palm is the stump and digs at the limestone",
+                "condition": "the quartermaster reasons the dead palm is the stump and digs at the limestone",
                 "next_scene_id": "the_division",
                 "state_delta": {"recovered_treasure": True},
             },
             {
-                "condition": "the bosun tries the beach shells first and the day runs out",
+                "condition": "the quartermaster tries the beach shells first and the day runs out",
                 "next_scene_id": "the_division",
             },
             {
-                "condition": "the bosun digs at the base of the young palm",
+                "condition": "the quartermaster digs at the base of the young palm",
                 "next_scene_id": "the_division",
             },
         ],
@@ -426,8 +426,8 @@ SCENES = [
             "Afternoon, the same beach. The crew in a loose semicircle on the "
             "sand. In the middle: an open iron-bound chest with what was found "
             "in it (or an empty hole and a spade resting in the sand). The "
-            "bosun standing at the chest, the chart loose in their hand. Doyle "
-            "with his arms crossed at the bosun's right shoulder. The cook to "
+            "quartermaster standing at the chest, the chart loose in their hand. Doyle "
+            "with his arms crossed at the quartermaster's right shoulder. The cook to "
             "the left, quieter than usual. The sun slanting low over the "
             "leeward water."
         ),
@@ -435,7 +435,7 @@ SCENES = [
             "Player decides how to divide the take (or how to handle empty-"
             "handedness). Good judgment: divide by the Account on the beach, "
             "openly, every man counted, the dead captain's share marked aside "
-            "for his widow at port, the bosun's-and-officer's shares marked "
+            "for his widow at port, the officers' shares — the quartermaster, the boatswain, the cook — marked"
             "openly. If the cache is empty, announce it plainly and the share "
             "of nothing is nothing — no man can complain of a fair zero. "
             "Reasonable but flawed: order the take returned to the ship to be "
@@ -451,16 +451,16 @@ SCENES = [
         "outcome": None,
         "transitions": [
             {
-                "condition": "the bosun divides openly on the beach by the Account, with the dead captain's share marked",
+                "condition": "the quartermaster divides openly on the beach by the Account, with the dead captain's share marked",
                 "next_scene_id": "the_return",
                 "state_delta": {"shared_take": True},
             },
             {
-                "condition": "the bosun orders the take returned to the ship to be divided at sea",
+                "condition": "the quartermaster orders the take returned to the ship to be divided at sea",
                 "next_scene_id": "the_return",
             },
             {
-                "condition": "the bosun claims a captain's share without the crew's vote",
+                "condition": "the quartermaster claims a captain's share without the crew's vote",
                 "next_scene_id": "the_return",
             },
         ],
@@ -485,7 +485,7 @@ SCENES = [
             "Treve — slight, twenty-two, dirty-blond, in only his shirt and "
             "breeches — frozen with one hand on the door bolt and the other "
             "near a folded piece of canvas held against his chest. He looks at "
-            "the bosun over his shoulder, white-eyed. The ship creaks slowly "
+            "the quartermaster over his shoulder, white-eyed. The ship creaks slowly "
             "around them. From higher up, the slow swing of a hammock."
         ),
         "evaluation_context": (
@@ -510,16 +510,16 @@ SCENES = [
         "outcome": None,
         "transitions": [
             {
-                "condition": "the bosun handles Treve steadily, gets the truth, sets a watch rota the crew trusts",
+                "condition": "the quartermaster handles Treve steadily, gets the truth, sets a watch rota the crew trusts",
                 "next_scene_id": "the_free_port",
                 "state_delta": {"no_mutiny": True},
             },
             {
-                "condition": "the bosun lets it pass and hopes for the best",
+                "condition": "the quartermaster lets it pass and hopes for the best",
                 "next_scene_id": "the_free_port",
             },
             {
-                "condition": "the bosun clamps Treve in irons and announces him as an example",
+                "condition": "the quartermaster clamps Treve in irons and announces him as an example",
                 "next_scene_id": "ending_marooned",
             },
         ],
@@ -544,9 +544,9 @@ SCENES = [
             "ships at anchor: a Dutch trader, a small French sloop. A red "
             "longboat coming out from the dock with five men in it — the "
             "harbor master and four hands. On the deck of the Margaret-Ann, "
-            "the bosun stands at the rail. Doyle behind them. The cook a few "
+            "the quartermaster stands at the rail. Doyle behind them. The cook a few "
             "paces back. The crew lined along the deck, every face turned "
-            "toward the bosun. The blue water, the wooden harbor, the open "
+            "toward the quartermaster. The blue water, the wooden harbor, the open "
             "morning."
         ),
         "evaluation_context": (
@@ -559,7 +559,7 @@ SCENES = [
             "chair).\n"
             "- If the player names self as captain AND 3 or 4 flags are "
             "true: pick transition 1 (accepted but conditional — partial).\n"
-            "- If crew_respect is FALSE (the bosun lost the crew at the "
+            "- If crew_respect is FALSE (the quartermaster lost the crew at the "
             "Account read at the very start): pick transition 2 (the crew "
             "trades you to the harbor master for amnesty — hung).\n"
             "- If the player asks the crew to elect a captain or declines "
@@ -587,7 +587,7 @@ SCENES = [
                 "next_scene_id": "ending_quiet_share",
             },
             {
-                "condition": "crew_respect is false — the crew gives the bosun up to the harbor master",
+                "condition": "crew_respect is false — the crew gives the quartermaster up to the harbor master",
                 "next_scene_id": "ending_hung",
             },
             {
@@ -618,7 +618,7 @@ SCENES = [
         "visual_description": (
             "The deck of the Margaret-Ann at midday. The harbor master in a "
             "rumpled blue coat at a small table with his open book, writing. "
-            "The bosun — now the captain — stands at his elbow. Doyle on the "
+            "The quartermaster — now the captain — stands at his elbow. Doyle on the "
             "captain's right hand, the cook on the left. The crew behind "
             "them, in good order, in their best linen. The pier in the "
             "background, sun bright on white-painted warehouses. A small "
@@ -638,7 +638,7 @@ SCENES = [
             "The crew gives you the chair, but not as a unanimous voice — "
             "some hands first, then the rest. The harbor master writes your "
             "name without ceremony. The ship is yours for this voyage and "
-            "perhaps the next, but the bosun's table you keep below shows "
+            "perhaps the next, but the quartermaster's table you keep below shows "
             "the rota you watched yourself sleep against, and the boatswain "
             "Doyle, when he looks at you, looks at you as a man who will "
             "have to keep proving it. The take is divided, the dead captain's "
@@ -648,9 +648,9 @@ SCENES = [
         "visual_description": (
             "The deck at evening. The harbor master gone, his name in the "
             "book. The crew breaking up into small groups, men shouldering "
-            "their kits and going ashore. The bosun-now-captain at the rail "
+            "their kits and going ashore. The quartermaster-now-captain at the rail "
             "looking at the lit harbor, alone. Doyle a few paces away, "
-            "looking at the same harbor, not at the bosun. The Margaret-Ann's "
+            "looking at the same harbor, not at the quartermaster. The Margaret-Ann's "
             "deck nearly empty."
         ),
         "evaluation_context": "Terminal ending — partial. Survived with the ship, no glory.",
@@ -675,14 +675,14 @@ SCENES = [
         ),
         "visual_description": (
             "The deck in the moment of arrest. Two of the harbor master's men "
-            "stepping toward the bosun. Doyle a step back, expression flat. "
-            "The crew not looking at the bosun. The harbor master closing his "
+            "stepping toward the quartermaster. Doyle a step back, expression flat. "
+            "The crew not looking at the quartermaster. The harbor master closing his "
             "book. Cut to: the small white-walled jail above the harbor, a "
             "single barred window, the harbor visible in the distance. The "
             "Margaret-Ann at anchor, made small by the angle, with another "
             "man's flag at her mizzen."
         ),
-        "evaluation_context": "Terminal failure — crew turned at port because the bosun lost their respect early.",
+        "evaluation_context": "Terminal failure — crew turned at port because the quartermaster lost their respect early.",
         "intro_video": None,
         "ambient_video": None,
         "is_terminal": True,
@@ -704,7 +704,7 @@ SCENES = [
         ),
         "visual_description": (
             "The longboat in the water between the Margaret-Ann and the "
-            "shore, the bosun at the oars with three purses at their feet. "
+            "shore, the quartermaster at the oars with three purses at their feet. "
             "On the deck of the Margaret-Ann, Doyle at the rail with a long "
             "musket levelled, expression utterly steady. The cook behind him "
             "looking away. The harbor master's boat a hundred yards off, "
@@ -734,7 +734,7 @@ SCENES = [
         ),
         "visual_description": (
             "Bright morning sea, a small longboat low in the water with four "
-            "men in it — the bosun in the stern, the cook in the middle, two "
+            "men in it — the quartermaster in the stern, the cook in the middle, two "
             "young hands at the oars. In the middle distance, a small low "
             "sandbar with two stunted palms. In the further distance, the "
             "stern of the Margaret-Ann sailing away under full canvas, a "
@@ -757,7 +757,7 @@ SCENES = [
             "found in the wreckage a month later by Spanish fishermen. The "
             "merchantman reaches port the next afternoon. Her captain is "
             "commended in dispatches. The chart, the Account, the cook, "
-            "Doyle, every man of the eighteen, and the bosun are all at "
+            "Doyle, every man of the eighteen, and the quartermaster are all at "
             "the bottom of the leeward channel before nightfall."
         ),
         "visual_description": (
