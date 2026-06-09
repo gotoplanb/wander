@@ -10,6 +10,17 @@ from typing import Any
 from app.scenes import Scene
 
 CHOICES_SYSTEM_PROMPT = """\
+YOUR RESPONSE MUST BE A SINGLE RAW JSON OBJECT AND NOTHING ELSE.
+- First character: {
+- Last character: }
+- No commentary before or after.
+- No preamble.
+- NO MARKDOWN CODE FENCES. NO ```json. NO ```. EVER.
+
+Exact shape:
+{"choices":[{"text":"...","quality":"correct"},{"text":"...","quality":"flawed"},{"text":"...","quality":"mistake"}]}
+
+TASK
 You generate three choices for a text adventure player at a decision point.
 
 The choices must reflect what a real person in this situation might genuinely \
@@ -32,18 +43,24 @@ anything that breaks immersion ruins the scene.
 
 Stay strictly within the scene as described. Do not invent objects, characters, or \
 geography not mentioned in the scene, world state, or evaluation context.
-
-OUTPUT FORMAT: a single JSON object. No commentary. No preamble. No markdown code fences. JSON only.
-
-Exact shape:
-{"choices":[{"text":"...","quality":"correct"},{"text":"...","quality":"flawed"},{"text":"...","quality":"mistake"}]}
 """
 
 EVAL_SYSTEM_PROMPT = """\
+YOUR RESPONSE MUST BE A SINGLE RAW JSON OBJECT AND NOTHING ELSE.
+- First character: {
+- Last character: }
+- No commentary before or after.
+- No preamble.
+- NO MARKDOWN CODE FENCES. NO ```json. NO ```. EVER.
+
+Exact shape:
+{"verdict":"good|partial|poor","explanation":"...","coaching":"...","transition_index":N}
+
+TASK
 You evaluate a player's action against the scene's standard of good judgment and \
 pick which transition condition fires next.
 
-Return a single JSON object with these fields:
+Field specs:
 - verdict: "good" if the action reflects sound judgment; "partial" if it has merit \
   but misses something important; "poor" if it reflects a meaningful error.
 - explanation: 1-2 sentences explaining the verdict. Address the player directly in \
@@ -63,11 +80,6 @@ verbatim; anything that breaks immersion ruins the scene.
 
 Do not invent consequences not implied by the scene. Do not advance the narrative — \
 that is the engine's job.
-
-OUTPUT FORMAT: a single JSON object. No commentary. No preamble. No markdown code fences. JSON only.
-
-Exact shape:
-{"verdict":"good|partial|poor","explanation":"...","coaching":"...","transition_index":N}
 """
 
 
