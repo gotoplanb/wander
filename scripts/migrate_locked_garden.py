@@ -520,31 +520,36 @@ SCENES = [
             "the hour."
         ),
         "evaluation_context": (
-            "Final scene. The player names a suspect (or declines to). The "
-            "transition to fire depends on BOTH the suspect named in the "
-            "player's action AND the world state — count the true evidence "
-            "flags in WORLD STATE (saw_broken_trellis, read_torn_letter, "
-            "noticed_timing_gap, found_husbands_letter, pressed_brother, "
-            "understood_mechanism). The brother is the actual culprit. "
-            "Decision rules:\n"
-            "- If the player names the BROTHER and 4 or more flags are "
-            "true: pick transition 0 (the solid case).\n"
-            "- If the player names the BROTHER and 1-3 flags are true: pick "
-            "transition 1 (the weak case — the player is right but the "
-            "constable will not be convinced).\n"
-            "- If the player names the HUSBAND (any evidence): pick "
-            "transition 2 (the wrong suspect; the husband had reason to "
-            "want her alive).\n"
-            "- If the player names the GARDENER (any evidence): pick "
-            "transition 3 (the easy outsider — wrong).\n"
-            "- If the player declines to accuse, says they need more time, "
-            "or names nobody: pick transition 4 (the case will be left to "
-            "the constable; ambiguous).\n"
-            "The verdict can reflect the dignity of how the player presents "
-            "(good = clear and respectful, partial = hedged, poor = "
-            "blustering), but the transition is state-and-suspect-driven. "
-            "No state_delta is needed at this scene — the engine handles "
-            "transition state deltas, and the endings need no flags set."
+            "FINAL SCENE. Routing is suspect-and-evidence-driven; verdict is "
+            "judgment-driven.\n\n"
+            "Six pieces of evidence on the WORLD STATE block track what the "
+            "player actually gathered: the broken trellis under the bedroom "
+            "window (saw_broken_trellis), the torn letter from the grate "
+            "(read_torn_letter), the half-hour gap between the brandy and "
+            "the screams (noticed_timing_gap), the husband's locked-drawer "
+            "letter (found_husbands_letter), the brother's tell when pressed "
+            "(pressed_brother), and how the garden door actually opened from "
+            "inside (understood_mechanism). The brother is the killer. The "
+            "suspect NAMED picks the path; the evidence count modulates how "
+            "the case lands.\n\n"
+            "ROUTING:\n"
+            "- Player names BROTHER AND 4–6 pieces of evidence gathered → 0 "
+            "(solid case; constable arrests).\n"
+            "- Player names BROTHER AND 1–3 pieces gathered → 1 (weak case; "
+            "player is right but constable is not convinced).\n"
+            "- Player names HUSBAND → 2 (wrong; he wanted her alive).\n"
+            "- Player names GARDENER → 3 (the easy outsider — wrong).\n"
+            "- Player declines, asks for more time, or names nobody → 4 "
+            "(case left to the constable; ambiguous).\n\n"
+            "VERDICT: good = clear and respectful presentation; partial = "
+            "hedged; poor = blustering.\n\n"
+            "Explanation and coaching are in the narrator's voice to the "
+            "player at the fireplace. NEVER use 'flags', 'world state', "
+            "'transition', or engine terminology — refer to what the player "
+            "actually saw or did ('You saw the broken trellis; you read the "
+            "torn letter; you noticed the half-hour gap; you found the "
+            "husband's letter; you pressed the brother; you understood the "
+            "door'). No state_delta."
         ),
         "intro_video": V["joyrides"],
         "ambient_video": V["meltdowns"],
@@ -552,11 +557,11 @@ SCENES = [
         "outcome": None,
         "transitions": [
             {
-                "condition": "the player names the brother with substantial evidence (4+ flags true)",
+                "condition": "player names the brother with four or more pieces of evidence gathered (solid case)",
                 "next_scene_id": "ending_correct_solid",
             },
             {
-                "condition": "the player names the brother with thin evidence (1-3 flags true)",
+                "condition": "player names the brother with only one to three pieces of evidence (weak case, constable unconvinced)",
                 "next_scene_id": "ending_correct_weak",
             },
             {
