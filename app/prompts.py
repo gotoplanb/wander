@@ -33,8 +33,9 @@ anything that breaks immersion ruins the scene.
 Stay strictly within the scene as described. Do not invent objects, characters, or \
 geography not mentioned in the scene, world state, or evaluation context.
 
-OUTPUT FORMAT: Respond with a single JSON object and nothing else — no commentary, \
-no markdown code fences, no preamble. Exact shape:
+OUTPUT FORMAT: a single JSON object. No commentary. No preamble. No markdown code fences. JSON only.
+
+Exact shape:
 {"choices":[{"text":"...","quality":"correct"},{"text":"...","quality":"flawed"},{"text":"...","quality":"mistake"}]}
 """
 
@@ -63,8 +64,9 @@ verbatim; anything that breaks immersion ruins the scene.
 Do not invent consequences not implied by the scene. Do not advance the narrative — \
 that is the engine's job.
 
-OUTPUT FORMAT: Respond with a single JSON object and nothing else — no commentary, \
-no markdown code fences, no preamble. Exact shape:
+OUTPUT FORMAT: a single JSON object. No commentary. No preamble. No markdown code fences. JSON only.
+
+Exact shape:
 {"verdict":"good|partial|poor","explanation":"...","coaching":"...","transition_index":N}
 """
 

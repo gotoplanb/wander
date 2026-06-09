@@ -97,19 +97,20 @@ EPISODE_META = {
         "over anyone except the friend they are about to look for.\n\n"
         "Named characters and what they are:\n"
         "- Shift Lead Manda Korth: the player's direct supervisor on the "
-        "Brackish's reclamation deck for the last two cycles. She is the "
-        "player's ONLY personal connection on this ship. She is not the "
-        "player's relative, not their romantic interest — she is the boss "
-        "who taught them the job and trusted them with her console password. "
-        "She is currently missing on a Lardner-Voss compliance summons.\n"
+        "Brackish's reclamation deck for the last two cycles. SHE/HER pronouns "
+        "throughout. She is the player's ONLY personal connection on this "
+        "ship. She is not the player's relative, not their romantic interest "
+        "— she is the boss who taught them the job and trusted them with her "
+        "console password. She is currently missing on a Lardner-Voss "
+        "compliance summons.\n"
         "- Foreman Olm: deck foreman of the Brackish. A company man — corporate "
-        "compliance's eyes on this deck. Treat him as an antagonist.\n"
+        "compliance's eyes on this deck. He/him. Treat him as an antagonist.\n"
         "- Tem: night clerk at Lubricasso's, a 24-hour fuel-and-food franchise "
-        "on a refueling moon. Owes Korth a favor. Just a clerk — not a "
-        "relative, not a romantic interest.\n"
+        "on a refueling moon. They/them. Owes Korth a favor. Just a clerk — "
+        "not a relative, not a romantic interest.\n"
         "- Vex Brindle: regional compliance officer for Lardner-Voss "
-        "Synergistics. The antagonist. A corporate manager with a quota for "
-        "'recovered assets,' not a personal enemy.\n\n"
+        "Synergistics. He/him. The antagonist. A corporate manager with a "
+        "quota for 'recovered assets,' not a personal enemy.\n\n"
         "Locations: the Brackish's reclamation bay, an escape pod, the "
         "Threnody Drift (an asteroid graveyard of dead mining haulers), "
         "Lubricasso's (a fuel-and-food diner on a refueling moon), the LVS "
@@ -436,6 +437,13 @@ SCENES = [
         "id": "the_tower",
         "title": "The Compliance Tower lobby",
         "narrative": (
+            "You leave the pod in the Tower's outer parking shoal. Before you "
+            "cross the docking strut into the lobby you stash the crystal and "
+            "your datapad in the pod's tool-locker — anything you carry into "
+            "an LVS building becomes discoverable, and Korth's whole point "
+            "in keeping the crystal off the Brackish was to keep it off LVS "
+            "premises full stop. You go in with empty pockets and the case "
+            "file memorized.\n\n"
             "The Lardner-Voss Compliance Tower is a brutalist concrete cube "
             "thirty stories on a side, on the night side of the moon, lit "
             "white at the corners. The main lobby is at street level: a "
@@ -613,20 +621,24 @@ SCENES = [
             "rec-tech understands why she ran the crystal off the ship in "
             "the first place: because once it's on LVS premises it becomes "
             "discoverable evidence in Brindle's case against HER, not against "
-            "Brindle. Good judgment: tell her no, the crystal is hidden off "
-            "premises and the datapad with the copy is also off premises. "
-            "Tell her you have the case file. Ask what she needs you to do "
-            "next. Set trust_korth=True. Reasonable but flawed: tell her "
-            "yes, you brought the crystal — meaning it's in your pocket "
-            "right now. She will be visibly tense for the rest of the scene "
-            "but will work with you anyway. No flag. Common mistake: hand "
-            "her the crystal across the table to prove the rec-tech trusts "
-            "her. The crystal on the table is the crystal in evidence, and "
-            "Korth — whose only option to walk out of this building is to "
-            "trade something — will trade it. Transition 2 leads to "
-            "ending_betrayed: Korth calls for Brindle, hands him the crystal, "
-            "and walks. The rec-tech does not. Transition 0 sets "
-            "trust_korth=True. Transition 1 does not."
+            "Brindle. The rec-tech HAS stashed the crystal and the datapad "
+            "copy in the pod before crossing the strut (see the_tower); the "
+            "good answer is the literal truth. Good judgment: confirm to her "
+            "that the crystal and the datapad copy are in the pod, that the "
+            "rec-tech walked in with empty pockets and the case file "
+            "memorized, and ask what she needs next. Set trust_korth=True. "
+            "Reasonable but flawed: hedge — tell her something vague like "
+            "'they're safe' or 'they're not where anyone can get them' "
+            "without confirming the location. Workable but reads as "
+            "evasion. No flag. Common mistake: produce something — claim to "
+            "have a piece of it on the rec-tech's person, or take anything "
+            "out of a pocket to show her. Whatever appears on the table is "
+            "the thing Korth will trade for her own release, because the "
+            "only option open to her in this building is to trade something. "
+            "Transition 2 leads to ending_betrayed: Korth uses what was put "
+            "in front of her, calls for Brindle, and walks. The rec-tech "
+            "does not. Transition 0 sets trust_korth=True. Transition 1 "
+            "does not."
         ),
         "intro_video": None,
         "ambient_video": None,
@@ -634,16 +646,16 @@ SCENES = [
         "outcome": None,
         "transitions": [
             {
-                "condition": "the rec-tech tells Korth the crystal is off premises and asks what she needs next",
+                "condition": "the rec-tech confirms the crystal and datapad are in the pod and asks what Korth needs next",
                 "next_scene_id": "the_strut",
                 "state_delta": {"trust_korth": True},
             },
             {
-                "condition": "the rec-tech tells Korth the crystal is in their pocket right now",
+                "condition": "the rec-tech hedges with a vague 'they're safe' instead of confirming the pod",
                 "next_scene_id": "the_strut",
             },
             {
-                "condition": "the rec-tech hands the crystal across the table to Korth to prove they trust her",
+                "condition": "the rec-tech produces something — pocket contents, the crystal, anything — and puts it on the table",
                 "next_scene_id": "ending_betrayed",
             },
         ],
