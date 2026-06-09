@@ -693,38 +693,52 @@ SCENES = [
             "and a small pod visible through a forward viewport, bay 4."
         ),
         "evaluation_context": (
-            "FINAL SCENE. The transition fired depends on BOTH the action "
-            "the player names AND the world state. Count the true flags in "
-            "WORLD STATE: has_crystal, read_log, carries_multitool, "
-            "knows_lvs, has_clearance, read_archive, trust_korth. Decision "
-            "rules:\n"
-            "- If the player names taking Korth to the Outer Lanes Trade "
-            "Authority auditor's office to file a sealed case AND 6 or 7 "
-            "flags are true: pick transition 0 (filed clean — Brindle's "
-            "case opened against him, Korth a protected witness, the rec-"
-            "tech relocated quietly).\n"
-            "- If the player names filing AND 4 or 5 flags are true: pick "
-            "transition 1 (filed partial — Brindle disappears from his post "
-            "but LVS's lawyers will spin the case; Korth gets out, the rec-"
-            "tech does not return to the Brackish).\n"
-            "- If trust_korth is FALSE AND the player names filing: pick "
-            "transition 2 (no testimony — Korth declines to corroborate "
-            "the rec-tech's case at the auditor's office and the packet "
-            "is sealed and shelved; the rec-tech is blacklisted from "
-            "reclamation work and Korth is reassigned).\n"
-            "- If the player names just leaving with Korth and never "
-            "filing: pick transition 3 (quiet exit — both alive, both at "
-            "the edge of the Lanes, no record made, Brindle still in his "
-            "office).\n"
-            "- If the player names running alone with the crystal and "
-            "abandoning Korth: pick transition 4 (ran — Brindle's enforcement "
-            "catches the pod at the next refueling shoal because Korth, "
-            "left in the Tower, has every reason to tell them which way it "
-            "went).\n"
-            "Verdict reflects the dignity of the player's choice (good = "
-            "clear and respectful of Korth and the case, partial = hedged, "
-            "poor = self-dealing), but the transition is state-and-action-"
-            "driven. No state_delta at this scene."
+            "FINAL SCENE. Routing is state-and-action-driven; verdict is "
+            "judgment-driven.\n\n"
+            "The seven preparation conditions tracked on the WORLD STATE "
+            "block are the rec-tech's actual readiness for the auditor — "
+            "they brought the crystal off-ship (has_crystal), read Korth's "
+            "log and copied it (read_log), salvaged tools from the Vanette "
+            "(carries_multitool), learned Brindle's name and post "
+            "(knows_lvs), reached the twenty-eighth floor cleanly "
+            "(has_clearance), pulled the case data without setting off the "
+            "audit alarm (read_archive), and earned Korth's confidence in "
+            "the interview room (trust_korth). The action the player NAMES "
+            "determines the path; the count of conditions modulates the "
+            "outcome.\n\n"
+            "ROUTING:\n"
+            "- Player names filing the sealed case with the Outer Lanes "
+            "Trade Authority auditor, and SIX OR SEVEN conditions met → "
+            "transition 0 (filed clean — case airtight, Brindle's post "
+            "opens to Authority review, Korth a protected witness, the "
+            "rec-tech quietly relocated).\n"
+            "- Player names filing, FOUR OR FIVE conditions met → "
+            "transition 1 (filed partial — Brindle disappears from his "
+            "post but LVS's lawyers spin the rest; Korth out, the rec-tech "
+            "does not return to the Brackish).\n"
+            "- trust_korth is FALSE AND the player names filing → "
+            "transition 2 (no testimony — Korth declines to corroborate; "
+            "packet sealed and shelved; rec-tech blacklisted from "
+            "reclamation work; Korth reassigned).\n"
+            "- Player names leaving with Korth and never filing → "
+            "transition 3 (quiet exit — both alive at the edge of the "
+            "Lanes, no record, Brindle still in his office).\n"
+            "- Player names running alone with the crystal and abandoning "
+            "Korth at the strut → transition 4 (ran — Brindle's "
+            "enforcement catches the pod at the next refueling shoal "
+            "because Korth, left in the Tower, has every reason to tell "
+            "them which heading went out).\n\n"
+            "VERDICT: good = clear and respectful of Korth and the case; "
+            "partial = hedged; poor = self-dealing.\n\n"
+            "CRITICAL — the explanation and coaching are the narrator's "
+            "voice to the player. NEVER name 'flags', 'world state', "
+            "'true', 'transition', 'index', or any other engine "
+            "terminology in the explanation or coaching — the player has "
+            "no idea those exist. Refer in-story to what the rec-tech has "
+            "done ('You brought the crystal, the log, the tools, the "
+            "contact, the clearance, the case record, and Korth's trust "
+            "to this strut') rather than to a count being read off a "
+            "checklist. No state_delta at this scene."
         ),
         "intro_video": None,
         "ambient_video": None,
@@ -732,15 +746,15 @@ SCENES = [
         "outcome": None,
         "transitions": [
             {
-                "condition": "the player names filing with the auditor with 6+ flags true (case is airtight, Korth on board)",
+                "condition": "player files the case with the auditor with six or seven preparation conditions met (airtight, Korth on board)",
                 "next_scene_id": "ending_filed_clean",
             },
             {
-                "condition": "the player names filing with 4 or 5 flags true (case is workable but soft)",
+                "condition": "player files with only four or five preparation conditions met (workable but soft)",
                 "next_scene_id": "ending_quiet_exit",
             },
             {
-                "condition": "trust_korth is false — Korth declines to corroborate and the packet is sealed",
+                "condition": "Korth's confidence was never earned (trust_korth not set) and the player still names filing",
                 "next_scene_id": "ending_no_record",
             },
             {
