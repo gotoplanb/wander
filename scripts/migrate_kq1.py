@@ -174,9 +174,9 @@ SCENES = [
             "by the frame and retreat. Reasonable but flawed: descend partway, judge "
             "the risk too great, retreat empty-handed (no mirror but alive). Common "
             "mistake that ends the quest: draw a weapon, shout, throw something at "
-            "the dragon, run for the mirror, attempt to fight or speak. The AI "
-            "should set state_delta has_mirror to true ONLY if the action results "
-            "in successfully retrieving the mirror (transition 0)."
+            "the dragon, run for the mirror, attempt to fight or speak. The "
+            "engine sets has_mirror=True when transition 0 fires; the AI does not "
+            "need to report any state changes."
         ),
         "intro_video": V["blazes"],
         "ambient_video": V["bunny"],
@@ -272,9 +272,8 @@ SCENES = [
             "hospitality and flee the cottage empty-handed (alive but no chest). "
             "Common mistake that ends the quest: accept her food, sit at the table, "
             "fall asleep by the fire, fight her openly (she has the home advantage "
-            "and is stronger than she looks). The AI should set state_delta "
-            "has_chest to true ONLY if the wanderer obtains the chest (transition "
-            "0)."
+            "and is stronger than she looks). The engine sets has_chest=True when "
+            "transition 0 fires; the AI does not need to report any state changes."
         ),
         "intro_video": V["blazes"],
         "ambient_video": V["fun"],
@@ -325,8 +324,8 @@ SCENES = [
             "the vine empty-handed (no shield but alive). Common mistake that ends "
             "the quest: rush, drop something, run for the shield, attempt to use "
             "magic, attempt to threaten or wake the giant on purpose, or step on a "
-            "vine root that snaps. The AI should set state_delta has_shield to true "
-            "ONLY if the wanderer successfully takes the shield (transition 0)."
+            "vine root that snaps. The engine sets has_shield=True when transition "
+            "0 fires; the AI does not need to report any state changes."
         ),
         "intro_video": V["fun"],
         "ambient_video": V["bunny"],
@@ -367,16 +366,30 @@ SCENES = [
             "attention. Dust hangs in the air. The wanderer's footsteps echo."
         ),
         "evaluation_context": (
-            "Final scene before the ending. The wanderer is reporting back to the "
-            "king. The TRANSITION to pick depends ENTIRELY on the WORLD STATE: if "
-            "has_mirror AND has_chest AND has_shield are all true, pick transition "
-            "0 (triumphant). If at least one is true but not all, pick transition 1 "
-            "(partial). If all three are false, pick transition 2 (empty-handed). "
-            "The verdict can reflect the dignity of how the wanderer presents (good "
-            "if they speak honestly and respectfully, partial if they exaggerate or "
-            "deflect, poor if they lie or insult the king), but the verdict does "
-            "not change which transition fires — the world state alone decides "
-            "that. No state_delta needed at this scene."
+            "FINAL SCENE. Routing is state-driven; verdict is judgment-driven.\n\n"
+            "Three treasures were sent for: the mirror that shows tomorrow "
+            "(has_mirror), the chest that gives gold without end (has_chest), "
+            "and the shield that turns blades (has_shield). What the wanderer "
+            "actually returns with — three, some, or none — is what the king "
+            "is asking about.\n\n"
+            "ROUTING:\n"
+            "- All three treasures recovered → transition 0 (triumphant: throne "
+            "named, ending_triumphant).\n"
+            "- At least one but not all three → transition 1 (partial: the "
+            "kingdom is grateful but the throne does not pass).\n"
+            "- None recovered → transition 2 (empty-handed: the kingdom falls).\n\n"
+            "VERDICT: good = the wanderer speaks honestly and respectfully to "
+            "the king; partial = they exaggerate, deflect, or omit; poor = they "
+            "lie or insult the king. The verdict reflects the dignity of the "
+            "telling and does NOT change which transition fires.\n\n"
+            "CRITICAL — the explanation and coaching are the narrator's voice "
+            "to the wanderer. NEVER name 'flags', 'world state', 'true', "
+            "'transition', 'index', or any other engine terminology in the "
+            "explanation or coaching — there is no such thing in the throne "
+            "room. Refer in-story to what the wanderer has done ('You have "
+            "brought back the mirror, the chest, and the shield' or 'You "
+            "return with the chest alone' or 'You return with nothing') "
+            "rather than to a count being read off a list."
         ),
         "intro_video": V["joyrides"],
         "ambient_video": V["elephants"],

@@ -550,28 +550,29 @@ SCENES = [
             "morning."
         ),
         "evaluation_context": (
-            "FINAL SCENE. The transition fired depends on BOTH the action the "
-            "player names AND the world state. Count the true flags in WORLD "
-            "STATE: crew_respect, has_chart, avoided_spanish, recovered_"
-            "treasure, shared_take, no_mutiny. The decision rules are:\n"
-            "- If the player names self as captain to the harbor master AND "
-            "5 or more flags are true: pick transition 0 (the captain's "
-            "chair).\n"
-            "- If the player names self as captain AND 3 or 4 flags are "
-            "true: pick transition 1 (accepted but conditional — partial).\n"
-            "- If crew_respect is FALSE (the quartermaster lost the crew at the "
-            "Account read at the very start): pick transition 2 (the crew "
-            "trades you to the harbor master for amnesty — hung).\n"
-            "- If the player asks the crew to elect a captain or declines "
-            "to take the chair: pick transition 3 (the quiet share — "
-            "partial).\n"
-            "- If the player tries to abscond with the take in the longboat: "
-            "pick transition 4 (the crew shoots you from the deck — the "
-            "captain's chair was within reach and you chose this).\n"
-            "Verdict reflects the dignity of the player's choice (good = "
-            "clear and respectful of the crew, partial = hedged, poor = "
-            "self-dealing), but the transition is state-and-action-driven. "
-            "No state_delta is needed at this scene."
+            "FINAL SCENE. Routing is state-and-action-driven; verdict is "
+            "judgment-driven.\n\n"
+            "Six preparation conditions on the WORLD STATE block track what "
+            "the quartermaster did this voyage: read the Account straight "
+            "(crew_respect), logged the chart with witnesses (has_chart), "
+            "turned away from the Spanish frigate (avoided_spanish), recovered "
+            "the cache (recovered_treasure), divided the take on the beach "
+            "(shared_take), steadied the Treve incident (no_mutiny). The "
+            "action NAMED on deck picks the path; the count modulates it.\n\n"
+            "ROUTING:\n"
+            "- Names self captain AND 5–6 conditions met → 0 (captain's chair).\n"
+            "- Names self captain AND 3–4 met → 1 (accepted on conditions).\n"
+            "- crew_respect never earned → 2 (crew gives them up; hung).\n"
+            "- Declines / asks crew to elect → 3 (quiet share).\n"
+            "- Abscond with take → 4 (Doyle's musket).\n\n"
+            "VERDICT: good = clear and respectful of crew and Account; "
+            "partial = hedged; poor = self-dealing.\n\n"
+            "Explanation and coaching are in the narrator's voice to the "
+            "quartermaster on this deck. NEVER use 'flags', 'world state', "
+            "'transition', or engine terminology — refer to what they "
+            "actually did ('You read the Account straight; you logged the "
+            "chart; you turned from the frigate; you found the cache; you "
+            "divided on the sand; you steadied the magazine'). No state_delta."
         ),
         "intro_video": V["joyrides"],
         "ambient_video": V["fun"],
@@ -579,15 +580,15 @@ SCENES = [
         "outcome": None,
         "transitions": [
             {
-                "condition": "the player names self as captain with 5+ flags true (the crew is solidly with them)",
+                "condition": "quartermaster names self as captain with five or six preparation conditions met (crew solidly with them)",
                 "next_scene_id": "ending_captains_chair",
             },
             {
-                "condition": "the player names self as captain with 3 or 4 flags true (accepted but on conditions)",
+                "condition": "quartermaster names self as captain with only three or four conditions met (accepted but on conditions)",
                 "next_scene_id": "ending_quiet_share",
             },
             {
-                "condition": "crew_respect is false — the crew gives the quartermaster up to the harbor master",
+                "condition": "crew_respect was never earned at the Account read — the crew gives the quartermaster up to the harbor master",
                 "next_scene_id": "ending_hung",
             },
             {
