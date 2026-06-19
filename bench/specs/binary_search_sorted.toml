@@ -1,0 +1,28 @@
+schema_version = 1
+id = "binary_search_sorted"
+title = "Binary search on a sorted slice"
+difficulty = "medium"
+categories = ["search"]
+signature = "pub fn binary_search_sorted(xs: &[i32], target: i32) -> Option<usize>"
+prompt = """
+Return the index of `target` in `xs` wrapped in `Some`, or `None` if not
+present. The caller guarantees `xs` is sorted in ascending order.
+
+SIGNATURE (must match exactly):
+    pub fn binary_search_sorted(xs: &[i32], target: i32) -> Option<usize>
+
+BEHAVIOR
+- Must use binary search (O(log n)). A linear scan will not be marked
+  correct by the golden suite.
+- Compute the midpoint without integer overflow: prefer `low + (high - low) / 2`
+  over `(low + high) / 2`.
+- If `target` appears multiple times in `xs`, returning any of its indices
+  is acceptable.
+- Calling on an empty slice returns `None`.
+
+EXAMPLES
+- `binary_search_sorted(&[1, 3, 5, 7, 9], 5)` returns `Some(2)`.
+- `binary_search_sorted(&[1, 3, 5, 7, 9], 4)` returns `None`.
+- `binary_search_sorted(&[], 1)` returns `None`.
+- `binary_search_sorted(&[1], 1)` returns `Some(0)`.
+"""

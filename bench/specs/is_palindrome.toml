@@ -1,0 +1,26 @@
+schema_version = 1
+id = "is_palindrome"
+title = "Palindrome check (alphanumeric, case-insensitive)"
+difficulty = "easy"
+categories = ["string"]
+signature = "pub fn is_palindrome(s: &str) -> bool"
+prompt = """
+Return `true` if `s` reads the same forward and backward when considering
+only ASCII alphanumeric characters and treating uppercase and lowercase as
+equivalent. Return `false` otherwise.
+
+SIGNATURE (must match exactly):
+    pub fn is_palindrome(s: &str) -> bool
+
+BEHAVIOR
+- Skip every character that is not an ASCII letter or digit.
+- Compare the remaining sequence to its reverse, case-insensitive.
+- The empty string (and any string containing only non-alphanumeric
+  characters) is a palindrome — return `true`.
+
+EXAMPLES
+- `is_palindrome("racecar")` returns `true`.
+- `is_palindrome("A man, a plan, a canal: Panama")` returns `true`.
+- `is_palindrome("Hello, World!")` returns `false`.
+- `is_palindrome("")` returns `true`.
+"""

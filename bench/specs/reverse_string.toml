@@ -1,0 +1,24 @@
+schema_version = 1
+id = "reverse_string"
+title = "Reverse a string"
+difficulty = "easy"
+categories = ["string"]
+signature = "pub fn reverse_string(s: &str) -> String"
+prompt = """
+Implement a function that returns a new `String` containing the characters of
+`s` in reverse order.
+
+SIGNATURE (must match exactly):
+    pub fn reverse_string(s: &str) -> String
+
+BEHAVIOR
+- Input is a borrowed string slice. Output is an owned `String`.
+- Reverse by Unicode scalar value (`char`), not by byte. Reversing a string
+  that contains multi-byte characters should produce a valid UTF-8 string.
+- The empty string reverses to the empty string.
+
+EXAMPLES
+- `reverse_string("hello")` returns `"olleh"`.
+- `reverse_string("")` returns `""`.
+- `reverse_string("a")` returns `"a"`.
+"""

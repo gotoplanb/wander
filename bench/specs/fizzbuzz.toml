@@ -1,0 +1,28 @@
+schema_version = 1
+id = "fizzbuzz"
+title = "Classic FizzBuzz, returning a Vec"
+difficulty = "easy"
+categories = ["math"]
+signature = "pub fn fizzbuzz(n: u32) -> Vec<String>"
+prompt = """
+Return a `Vec<String>` containing the FizzBuzz sequence from `1` through `n`
+inclusive. For each integer `i` in that range:
+
+- If `i` is divisible by both 3 and 5, push `"FizzBuzz"`.
+- Else if `i` is divisible by 3, push `"Fizz"`.
+- Else if `i` is divisible by 5, push `"Buzz"`.
+- Otherwise push the integer formatted as a decimal string (e.g. `"7"`).
+
+SIGNATURE (must match exactly):
+    pub fn fizzbuzz(n: u32) -> Vec<String>
+
+BEHAVIOR
+- The returned vector has exactly `n` elements; element index `i` corresponds
+  to the integer `i + 1`.
+- `fizzbuzz(0)` returns an empty vector.
+
+EXAMPLES
+- `fizzbuzz(5)` returns `vec!["1", "2", "Fizz", "4", "Buzz"]`.
+- `fizzbuzz(15)` ends with `..., "13", "14", "FizzBuzz"`.
+- `fizzbuzz(0)` returns `vec![]`.
+"""

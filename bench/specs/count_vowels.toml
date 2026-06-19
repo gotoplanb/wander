@@ -1,0 +1,25 @@
+schema_version = 1
+id = "count_vowels"
+title = "Count vowels in a string"
+difficulty = "easy"
+categories = ["string"]
+signature = "pub fn count_vowels(s: &str) -> usize"
+prompt = """
+Return the number of vowels in `s`. A vowel is one of: `a`, `e`, `i`, `o`,
+`u` — case-insensitive, ASCII only. `y` is NOT a vowel for this function.
+
+SIGNATURE (must match exactly):
+    pub fn count_vowels(s: &str) -> usize
+
+BEHAVIOR
+- Count each occurrence; "aa" is two vowels.
+- Both lowercase and uppercase count.
+- Non-ASCII characters (including accented vowels) do not count.
+- The empty string returns `0`.
+
+EXAMPLES
+- `count_vowels("hello")` returns `2`.
+- `count_vowels("AEIOU")` returns `5`.
+- `count_vowels("rhythm")` returns `0`.
+- `count_vowels("")` returns `0`.
+"""

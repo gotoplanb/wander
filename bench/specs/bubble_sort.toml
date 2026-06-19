@@ -1,0 +1,31 @@
+schema_version = 1
+id = "bubble_sort"
+title = "Bubble sort"
+difficulty = "medium"
+categories = ["sort"]
+signature = "pub fn bubble_sort(xs: Vec<i32>) -> Vec<i32>"
+prompt = """
+Sort `xs` in ascending order using the bubble sort algorithm and return the
+sorted vector.
+
+SIGNATURE (must match exactly):
+    pub fn bubble_sort(xs: Vec<i32>) -> Vec<i32>
+
+BEHAVIOR
+- Take ownership of `xs`, sort it in place, then return it. (Equivalent to
+  `let mut v = xs; ... ; v`.)
+- The algorithm must be bubble sort — repeatedly compare adjacent pairs and
+  swap when out of order. Calling the standard library's `sort` or `sort_unstable`
+  is not the implementation we're testing.
+- The sort is ascending: `bubble_sort(vec![3, 1, 2])` returns `vec![1, 2, 3]`.
+- An empty or single-element input is returned unchanged.
+- The sort must be deterministic; for equal elements the relative order of
+  the result is unspecified (bubble sort happens to be stable, but the
+  golden tests don't depend on that).
+
+EXAMPLES
+- `bubble_sort(vec![5, 2, 9, 1, 5, 6])` returns `vec![1, 2, 5, 5, 6, 9]`.
+- `bubble_sort(vec![])` returns `vec![]`.
+- `bubble_sort(vec![1])` returns `vec![1]`.
+- `bubble_sort(vec![1, 2, 3])` returns `vec![1, 2, 3]`.
+"""

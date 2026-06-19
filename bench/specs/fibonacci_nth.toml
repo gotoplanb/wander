@@ -1,0 +1,30 @@
+schema_version = 1
+id = "fibonacci_nth"
+title = "Nth Fibonacci number"
+difficulty = "easy"
+categories = ["math"]
+signature = "pub fn fibonacci_nth(n: u32) -> u64"
+prompt = """
+Return the `n`-th Fibonacci number, where:
+
+    fib(0) = 0
+    fib(1) = 1
+    fib(k) = fib(k-1) + fib(k-2)   for k >= 2
+
+SIGNATURE (must match exactly):
+    pub fn fibonacci_nth(n: u32) -> u64
+
+BEHAVIOR
+- Use the standard zero-indexed definition above. `fibonacci_nth(0)` is `0`,
+  `fibonacci_nth(1)` is `1`.
+- Use an iterative (or memoized) implementation; naive double-recursion
+  takes exponential time on inputs the golden tests use.
+- `u64` holds `fibonacci_nth(n)` for `n <= 93`. Behavior at or above `94`
+  is unspecified; the corpus tests only inputs up to `90`.
+
+EXAMPLES
+- `fibonacci_nth(0)` returns `0`.
+- `fibonacci_nth(1)` returns `1`.
+- `fibonacci_nth(10)` returns `55`.
+- `fibonacci_nth(20)` returns `6765`.
+"""

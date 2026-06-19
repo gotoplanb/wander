@@ -1,0 +1,39 @@
+schema_version = 1
+id = "bfs_shortest_path"
+title = "Shortest unweighted path length via BFS"
+difficulty = "hard"
+categories = ["graph"]
+signature = "pub fn bfs_shortest_path(graph: &[Vec<usize>], start: usize, target: usize) -> Option<usize>"
+prompt = """
+Return the length (in number of edges) of the shortest path from `start`
+to `target` in an unweighted graph, wrapped in `Some`, or `None` if no
+path exists.
+
+SIGNATURE (must match exactly):
+    pub fn bfs_shortest_path(graph: &[Vec<usize>], start: usize, target: usize) -> Option<usize>
+
+GRAPH REPRESENTATION
+- `graph` is an adjacency list: `graph[i]` is the list of vertices that
+  vertex `i` has a directed edge TO.
+- Vertices are indexed `0..graph.len()`. Treat the graph as directed.
+  (If the caller wants undirected behavior, they will provide the
+  reverse edges in the adjacency list themselves.)
+
+BEHAVIOR
+- Must use breadth-first search. (A DFS or other algorithm would not give
+  shortest-path length in an unweighted graph in general.)
+- `bfs_shortest_path(g, n, n)` returns `Some(0)` for any valid `n`.
+- If `start` or `target` is out of bounds (`>= graph.len()`), the function
+  may panic — the caller is responsible for valid indices.
+- Self-loops and parallel edges in the adjacency list do not cause issues;
+  BFS handles them.
+
+EXAMPLES
+- Linear chain `0 -> 1 -> 2 -> 3 -> 4`:
+  `bfs_shortest_path(&[vec![1], vec![2], vec![3], vec![4], vec![]], 0, 4)`
+  returns `Some(4)`.
+- Disconnected vertices:
+  `bfs_shortest_path(&[vec![1], vec![], vec![]], 0, 2)` returns `None`.
+- Same start and target:
+  `bfs_shortest_path(&[vec![]], 0, 0)` returns `Some(0)`.
+"""

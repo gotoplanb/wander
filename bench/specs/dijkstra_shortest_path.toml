@@ -1,0 +1,40 @@
+schema_version = 1
+id = "dijkstra_shortest_path"
+title = "Shortest weighted path cost via Dijkstra's algorithm"
+difficulty = "hard"
+categories = ["graph"]
+signature = "pub fn dijkstra_shortest_path(graph: &[Vec<(usize, u32)>], start: usize, target: usize) -> Option<u32>"
+prompt = """
+Return the total weight of the shortest path from `start` to `target` in a
+weighted graph, wrapped in `Some`, or `None` if no path exists.
+
+SIGNATURE (must match exactly):
+    pub fn dijkstra_shortest_path(graph: &[Vec<(usize, u32)>], start: usize, target: usize) -> Option<u32>
+
+GRAPH REPRESENTATION
+- `graph` is an adjacency list of weighted edges. `graph[i]` is a list of
+  `(neighbor, weight)` tuples meaning vertex `i` has a directed edge to
+  `neighbor` with cost `weight`. Edge weights are non-negative `u32`s.
+- Vertices are indexed `0..graph.len()`. The graph is directed.
+
+BEHAVIOR
+- Must use Dijkstra's algorithm. A standard implementation uses a
+  binary-heap-backed priority queue (`std::collections::BinaryHeap` — note
+  it's a max-heap, so wrap distances in `std::cmp::Reverse`).
+- `dijkstra_shortest_path(g, n, n)` returns `Some(0)` for any valid `n`.
+- Edge weights are guaranteed non-negative, so a Dijkstra-style relaxation
+  is correct. No negative-edge handling is required.
+- If `start` or `target` is out of bounds, panicking is acceptable; the
+  caller is responsible for valid indices.
+- Treat the result as `u32`; the corpus's golden tests use weights that do
+  not sum to overflow.
+
+EXAMPLES
+- Three-vertex graph `0 -[1]-> 1 -[2]-> 2`, plus a direct `0 -[5]-> 2`:
+  `dijkstra_shortest_path(&[vec![(1, 1), (2, 5)], vec![(2, 2)], vec![]], 0, 2)`
+  returns `Some(3)` (the path `0 -> 1 -> 2` costs 3, beating the direct 5).
+- Disconnected:
+  `dijkstra_shortest_path(&[vec![(1, 1)], vec![], vec![]], 0, 2)` returns `None`.
+- Same start and target:
+  `dijkstra_shortest_path(&[vec![]], 0, 0)` returns `Some(0)`.
+"""
