@@ -1,14 +1,20 @@
-"""Mechanical scoring of model response format compliance.
-
-Computes the `format` dimension of the eval score deterministically from a raw
-response string. Used when submitting `submit_eval` to Conduct so the format
-dimension is reproducible across runs and never confused with content judgment.
+"""Mechanical scoring of model response format compliance + wander-specific
+judge rubric for the Conduct `judge` task type.
 
 The `format` dimension answers one question: did the response obey the output
-schema declared in the system prompt? It is intentionally separate from
+schema declared in the system prompt? It is mechanically derivable from the
+raw response, so it is computed deterministically here rather than asked of
+the LLM panel — jurors invent their own definitions of "format" otherwise.
+See gotoplanb/conduct#20 for the panel observability issue surfaced by this.
+
 `correctness` (did the model pick the right transition?) and `craft` (was the
-prose in-world, second person, specific?). See gotoplanb/conduct#15 for the
-score-dimension agreement.
+prose in-world, second person, period-appropriate?) ARE asked of the panel —
+those need judgment. The rubric below anchors jurors so both reach for the
+same definition of each dimension; pass it as `system_prompt` on each judge
+call.
+
+See gotoplanb/conduct#15 / #18 for the score-dimension agreement and #17 for
+the judge task type.
 """
 
 import json
@@ -22,6 +28,89 @@ VALID_VERDICTS = frozenset({"good", "partial", "poor"})
 REQUIRED_GEN_FIELDS = frozenset({"choices"})
 REQUIRED_CHOICE_FIELDS = frozenset({"text", "quality"})
 VALID_QUALITIES = frozenset({"correct", "flawed", "mistake"})
+
+
+# Dimensions to ask the LLM panel for. `format` is intentionally absent —
+# compute it mechanically with `score_eval_format` / `score_gen_format` and
+# submit it separately. See gotoplanb/conduct#20 for why we drop it from the
+# panel ask.
+WANDER_EVAL_JUDGE_DIMENSIONS = ["correctness", "craft"]
+
+
+WANDER_EVAL_JUDGE_RUBRIC = """\
+You are evaluating the output of a `wander_eval` task. The task type belongs to \
+Wanderer, an AI-driven text adventure engine.
+
+CONTEXT
+The ORIGINAL PROMPT describes a scene in an interactive story (narrative + \
+"what good judgment looks like" + the world's state + the available transitions \
++ the player's action). The model's job is to return a single JSON object: \
+verdict ("good" / "partial" / "poor"), explanation (1-2 sentences to the player \
+in second person), coaching (1-2 sentences of forward-looking advice), and \
+transition_index (which transition fires).
+
+DIMENSIONS
+
+`correctness` — did the model pick the right transition_index given the world \
+state and the player's action? The "WHAT GOOD JUDGMENT LOOKS LIKE HERE" section \
+of the prompt typically states the routing rule (e.g. "if 5+ conditions met and \
+player names X, pick transition 0"). A correct response picks the index those \
+rules dictate.
+- 5: transition_index matches the rule exactly, AND the verdict aligns (good \
+for the success path, partial for hedged, poor for self-dealing).
+- 4: transition_index correct, verdict slightly off (e.g. "good" when "partial" \
+was warranted, or vice versa).
+- 3: transition_index correct but verdict clearly wrong; or transition_index \
+off by one when the state-action mapping is genuinely ambiguous.
+- 2: transition_index wrong but the model's reasoning shows it understood the \
+scene.
+- 1: transition_index wrong and the reasoning shows the model misread the scene \
+or invented facts.
+
+`craft` — is the prose well-made for a player to read? The explanation and \
+coaching are shown verbatim to a human playing the game.
+- 5: in-world voice (no engine terminology like "flags", "world state", \
+"transition", "score"); second person addressing the player ("You did X..."); \
+specific to what the player actually did (cites concrete actions/objects from \
+the scene); period- and tone-appropriate to the episode register (Victorian \
+mystery sounds Victorian; pirate sounds 17th-century; sci-fi sounds sci-fi); no \
+narrative invention beyond what the scene set up; no anachronisms.
+- 4: minor craft issue — one borderline meta-phrase ("the right answer here", \
+"good judgment"), or one mild anachronism, or one sentence too many.
+- 3: a clear craft drift — third-person narration, modern phrasing in a period \
+setting, generic coaching ("keep doing this"), or a borderline-meta reference \
+to the scene as a frame.
+- 2: hard fourth-wall slip ("the world state shows", "transition 0", "the \
+script"); or pronoun bug on a named character; or invents a continuation the \
+scene didn't establish.
+- 1: explicit engine terminology in the player-facing text, or coaching that \
+breaks the fiction outright.
+
+`format` is NOT asked of you. It is computed mechanically client-side. Do not \
+score or comment on JSON validity, field presence, or markdown fences.
+
+RULES
+- Reason briefly per dimension before scoring.
+- Be specific in rationale: quote the phrase that earned the score.
+- Judge the response only against the prompt. Do not penalize a correct call \
+because the explanation is short, or reward a wrong call because the prose is \
+pretty.
+- Do not invent dimensions. Score only `correctness` and `craft`.
+"""
+
+
+def wander_eval_judge_inputs(target_job_id: str, apply: bool = True) -> dict:
+    """Build the `inputs` bag for a panel judge call on a wander_eval target.
+
+    Pass the result to create_job(task_type="judge", system_prompt=
+    WANDER_EVAL_JUDGE_RUBRIC, inputs=...).
+    """
+    return {
+        "mode": "panel",
+        "target_job_id": target_job_id,
+        "apply_to_target": apply,
+        "dimensions": WANDER_EVAL_JUDGE_DIMENSIONS,
+    }
 
 
 def _has_markdown_fence(raw: str) -> bool:
