@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "wanderer"
 version = "0.1.0"
-description = "AI-driven text adventure engine"
+description = "Conduct client harness — text-adventure engine + code-generation eval flywheel"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115",
@@ -20,4 +20,4 @@ dependencies = [
 wanderer-mcp = "app.mcp_server:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["app"]
+packages = ["app", "harness", "bench"]

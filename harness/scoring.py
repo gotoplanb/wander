@@ -1,5 +1,11 @@
-"""Mechanical scoring of model response format compliance + wander-specific
-judge rubric for the Conduct `judge` task type.
+"""Mechanical scoring of model response format compliance + wander_eval-
+specific judge rubric for the Conduct `judge` task type.
+
+This module is part of the shared `harness/` layer — the same pattern
+(mechanical scorer for syntactically-decidable dimensions + LLM judge rubric
+override for dimensions that need judgment) is what the `bench/` code-gen
+flywheel will reuse, with `code_eval` rubrics living alongside these
+`wander_eval` ones as that work lands.
 
 The `format` dimension answers one question: did the response obey the output
 schema declared in the system prompt? It is mechanically derivable from the
