@@ -1,0 +1,26 @@
+schema_version = 1
+id = "max_in_slice"
+title = "Maximum value in a slice"
+difficulty = "easy"
+categories = ["basic"]
+signature = "pub fn max_in_slice(xs: &[i32]) -> Option<i32>"
+prompt = """
+Return the largest value in `xs` wrapped in `Some`, or `None` if `xs` is
+empty.
+
+SIGNATURE (must match exactly):
+    pub fn max_in_slice(xs: &[i32]) -> Option<i32>
+
+BEHAVIOR
+- Comparison uses the natural ordering of `i32`. Negative values are
+  smaller than positive ones; `i32::MIN` is the smallest possible value.
+- If multiple elements are tied for the maximum, return one copy of it
+  (which one doesn't matter — they're equal).
+- `max_in_slice(&[])` returns `None`.
+
+EXAMPLES
+- `max_in_slice(&[3, 1, 4, 1, 5, 9, 2, 6])` returns `Some(9)`.
+- `max_in_slice(&[-5, -1, -10])` returns `Some(-1)`.
+- `max_in_slice(&[42])` returns `Some(42)`.
+- `max_in_slice(&[])` returns `None`.
+"""

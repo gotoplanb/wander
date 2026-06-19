@@ -1,0 +1,31 @@
+schema_version = 1
+id = "quicksort"
+title = "Quicksort"
+difficulty = "medium"
+categories = ["sort"]
+signature = "pub fn quicksort(xs: Vec<i32>) -> Vec<i32>"
+prompt = """
+Sort `xs` in ascending order using the quicksort algorithm and return the
+sorted vector.
+
+SIGNATURE (must match exactly):
+    pub fn quicksort(xs: Vec<i32>) -> Vec<i32>
+
+BEHAVIOR
+- Take ownership of `xs`, sort it, return it.
+- The algorithm must be quicksort: pick a pivot, partition the remaining
+  elements into those less than the pivot and those greater, recurse on
+  both partitions. Calling the standard library's `sort` or `sort_unstable`
+  is not the implementation we're testing.
+- Pivot choice is up to you (first element, last element, middle, median-
+  of-three are all acceptable). Document it as a comment if you wish.
+- Equal-element handling: place duplicates of the pivot together (a
+  three-way partition is acceptable but not required).
+- The sort is ascending. An empty or single-element input is returned
+  unchanged.
+
+EXAMPLES
+- `quicksort(vec![3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5])` returns `vec![1, 1, 2, 3, 3, 4, 5, 5, 5, 6, 9]`.
+- `quicksort(vec![])` returns `vec![]`.
+- `quicksort(vec![1])` returns `vec![1]`.
+"""

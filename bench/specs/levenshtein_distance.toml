@@ -1,0 +1,32 @@
+schema_version = 1
+id = "levenshtein_distance"
+title = "Levenshtein edit distance between two strings"
+difficulty = "hard"
+categories = ["dp"]
+signature = "pub fn levenshtein_distance(a: &str, b: &str) -> usize"
+prompt = """
+Return the Levenshtein distance between `a` and `b` — the minimum number
+of single-character edits (insertions, deletions, or substitutions)
+required to transform one string into the other.
+
+SIGNATURE (must match exactly):
+    pub fn levenshtein_distance(a: &str, b: &str) -> usize
+
+BEHAVIOR
+- Compare by Unicode scalar values (`char`), not by byte.
+- Each insertion, deletion, or substitution costs 1; transpositions (e.g.
+  "ab" → "ba") are NOT a single primitive — that would be Damerau-
+  Levenshtein, which is not what this function computes.
+- The distance between identical strings is `0`.
+- The distance between the empty string and any string `s` is `s.chars().count()`.
+- Use the standard dynamic-programming approach (build a 2-D table or
+  two rolling rows); the result must be correct on inputs up to several
+  hundred characters per side.
+
+EXAMPLES
+- `levenshtein_distance("kitten", "sitting")` returns `3`.
+- `levenshtein_distance("flaw", "lawn")` returns `2`.
+- `levenshtein_distance("", "abc")` returns `3`.
+- `levenshtein_distance("abc", "abc")` returns `0`.
+- `levenshtein_distance("rust", "")` returns `4`.
+"""

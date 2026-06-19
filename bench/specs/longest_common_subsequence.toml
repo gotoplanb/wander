@@ -1,0 +1,31 @@
+schema_version = 1
+id = "longest_common_subsequence"
+title = "Length of the longest common subsequence of two strings"
+difficulty = "hard"
+categories = ["dp"]
+signature = "pub fn longest_common_subsequence(a: &str, b: &str) -> usize"
+prompt = """
+Return the length (in characters) of the longest sequence of characters
+that appears in both `a` and `b` in the same relative order, but not
+necessarily contiguously.
+
+SIGNATURE (must match exactly):
+    pub fn longest_common_subsequence(a: &str, b: &str) -> usize
+
+BEHAVIOR
+- "Subsequence" allows skipping characters but preserves order:
+  "ace" is a subsequence of "abcde" because a, c, e appear in that order.
+- This is the SUBSEQUENCE problem, not the longest common SUBSTRING (which
+  requires contiguity). Don't confuse them.
+- Return only the length — not the subsequence itself.
+- Comparison is by `char` (Unicode scalar), not by byte.
+- Both strings empty returns `0`. Either string empty returns `0`.
+- Use the standard O(|a| * |b|) dynamic-programming table.
+
+EXAMPLES
+- `longest_common_subsequence("abcde", "ace")` returns `3` (matches "ace").
+- `longest_common_subsequence("abc", "abc")` returns `3`.
+- `longest_common_subsequence("abc", "def")` returns `0`.
+- `longest_common_subsequence("AGGTAB", "GXTXAYB")` returns `4` (matches "GTAB").
+- `longest_common_subsequence("", "anything")` returns `0`.
+"""

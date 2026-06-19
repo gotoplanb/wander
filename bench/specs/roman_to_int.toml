@@ -1,0 +1,40 @@
+schema_version = 1
+id = "roman_to_int"
+title = "Roman numeral to integer"
+difficulty = "medium"
+categories = ["string"]
+signature = "pub fn roman_to_int(s: &str) -> u32"
+prompt = """
+Parse `s` as a Roman numeral and return its integer value.
+
+SIGNATURE (must match exactly):
+    pub fn roman_to_int(s: &str) -> u32
+
+BEHAVIOR
+The valid Roman numeral symbols and their values:
+
+    I = 1     V = 5     X = 10    L = 50
+    C = 100   D = 500   M = 1000
+
+Normally symbols are written largest-first and their values are summed.
+Six subtractive cases override that rule:
+
+    IV = 4    IX = 9
+    XL = 40   XC = 90
+    CD = 400  CM = 900
+
+When a smaller-value symbol appears immediately before a larger-value
+symbol, subtract the smaller from the larger; otherwise add.
+
+The caller guarantees `s` is a syntactically valid Roman numeral in the
+range `1..=3999`. Uppercase only. You may assume well-formed input — no
+need to return errors for malformed input.
+
+EXAMPLES
+- `roman_to_int("III")` returns `3`.
+- `roman_to_int("IV")` returns `4`.
+- `roman_to_int("IX")` returns `9`.
+- `roman_to_int("LVIII")` returns `58`.
+- `roman_to_int("MCMXCIV")` returns `1994`.
+- `roman_to_int("MMMCMXCIX")` returns `3999`.
+"""

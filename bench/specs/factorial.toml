@@ -1,0 +1,26 @@
+schema_version = 1
+id = "factorial"
+title = "Factorial of n"
+difficulty = "easy"
+categories = ["math"]
+signature = "pub fn factorial(n: u32) -> u64"
+prompt = """
+Return `n!` (the factorial of `n`) as a `u64`.
+
+SIGNATURE (must match exactly):
+    pub fn factorial(n: u32) -> u64
+
+BEHAVIOR
+- `factorial(0)` is `1` by definition.
+- `u64` overflows at `21!` (`51_090_942_171_709_440_000` does not fit). The
+  corpus's golden tests only check inputs up to `20`, where the result
+  fits cleanly in `u64`. Behavior at or above `21` is unspecified; you may
+  use `u64::saturating_mul` / `wrapping_mul` or simply trust the caller.
+
+EXAMPLES
+- `factorial(0)` returns `1`.
+- `factorial(1)` returns `1`.
+- `factorial(5)` returns `120`.
+- `factorial(10)` returns `3_628_800`.
+- `factorial(20)` returns `2_432_902_008_176_640_000`.
+"""

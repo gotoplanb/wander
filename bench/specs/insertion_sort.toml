@@ -1,0 +1,27 @@
+schema_version = 1
+id = "insertion_sort"
+title = "Insertion sort"
+difficulty = "medium"
+categories = ["sort"]
+signature = "pub fn insertion_sort(xs: Vec<i32>) -> Vec<i32>"
+prompt = """
+Sort `xs` in ascending order using the insertion sort algorithm and return
+the sorted vector.
+
+SIGNATURE (must match exactly):
+    pub fn insertion_sort(xs: Vec<i32>) -> Vec<i32>
+
+BEHAVIOR
+- Take ownership of `xs`, sort it in place, then return it.
+- The algorithm must be insertion sort — iterate from the second element
+  onward, shifting earlier elements rightward to insert the current value
+  into its correct position. Calling the standard library's `sort` or
+  `sort_unstable` is not the implementation we're testing.
+- The sort is ascending.
+- An empty or single-element input is returned unchanged.
+
+EXAMPLES
+- `insertion_sort(vec![5, 2, 9, 1, 5, 6])` returns `vec![1, 2, 5, 5, 6, 9]`.
+- `insertion_sort(vec![])` returns `vec![]`.
+- `insertion_sort(vec![3, 3, 3])` returns `vec![3, 3, 3]`.
+"""

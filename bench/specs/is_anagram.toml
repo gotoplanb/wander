@@ -1,0 +1,31 @@
+schema_version = 1
+id = "is_anagram"
+title = "Anagram check (case-insensitive, ignoring whitespace)"
+difficulty = "medium"
+categories = ["string"]
+signature = "pub fn is_anagram(a: &str, b: &str) -> bool"
+prompt = """
+Return `true` if `a` and `b` are anagrams of one another — that is, they
+contain the same characters with the same counts — when comparing
+case-insensitively and ignoring whitespace.
+
+SIGNATURE (must match exactly):
+    pub fn is_anagram(a: &str, b: &str) -> bool
+
+BEHAVIOR
+- Ignore any whitespace character (space, tab, newline, etc. — use
+  `char::is_whitespace`). All other characters are considered.
+- Treat uppercase and lowercase ASCII letters as equivalent. Non-ASCII
+  characters are compared case-sensitively (do not attempt full Unicode
+  case folding).
+- Both empty strings are anagrams of each other — return `true`.
+- After normalization, two strings are anagrams iff they have identical
+  character multisets.
+
+EXAMPLES
+- `is_anagram("listen", "silent")` returns `true`.
+- `is_anagram("Conversation", "voices rant on")` returns `true`.
+- `is_anagram("hello", "world")` returns `false`.
+- `is_anagram("", "")` returns `true`.
+- `is_anagram("a", "ab")` returns `false`.
+"""

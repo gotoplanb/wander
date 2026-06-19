@@ -1,0 +1,32 @@
+schema_version = 1
+id = "longest_common_prefix"
+title = "Longest common prefix of a slice of strings"
+difficulty = "medium"
+categories = ["string"]
+signature = "pub fn longest_common_prefix(strs: &[String]) -> String"
+prompt = """
+Return the longest string that is a prefix of every element of `strs`. If
+`strs` is empty, return the empty string.
+
+SIGNATURE (must match exactly):
+    pub fn longest_common_prefix(strs: &[String]) -> String
+
+BEHAVIOR
+- Compare strings by Unicode scalar values (`char`), not by byte. The
+  result must be valid UTF-8.
+- If any element of `strs` is the empty string, the common prefix is the
+  empty string.
+- If `strs` contains exactly one element, the common prefix is that
+  element itself.
+- The result is always an owned `String`, never a reference into `strs`.
+
+EXAMPLES
+- `longest_common_prefix(&["flower".to_string(), "flow".to_string(), "flight".to_string()])`
+  returns `"fl"`.
+- `longest_common_prefix(&["dog".to_string(), "racecar".to_string(), "car".to_string()])`
+  returns `""`.
+- `longest_common_prefix(&["interspecies".to_string(), "interstellar".to_string(), "interstate".to_string()])`
+  returns `"inters"`.
+- `longest_common_prefix(&[])` returns `""`.
+- `longest_common_prefix(&["alone".to_string()])` returns `"alone"`.
+"""

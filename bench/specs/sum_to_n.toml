@@ -1,0 +1,25 @@
+schema_version = 1
+id = "sum_to_n"
+title = "Sum of integers from 1 to n inclusive"
+difficulty = "easy"
+categories = ["math"]
+signature = "pub fn sum_to_n(n: u64) -> u64"
+prompt = """
+Return the sum `1 + 2 + ... + n`. When `n` is `0`, return `0`.
+
+SIGNATURE (must match exactly):
+    pub fn sum_to_n(n: u64) -> u64
+
+BEHAVIOR
+- The function must not panic for any valid `u64` input. The closed-form
+  expression `n * (n + 1) / 2` computes the result without overflow for any
+  `n` up to and including `u64::MAX / 2` (the canonical implementation).
+- An iterative summing loop is also acceptable and will not be penalized
+  for the corpus's golden test range.
+
+EXAMPLES
+- `sum_to_n(0)` returns `0`.
+- `sum_to_n(1)` returns `1`.
+- `sum_to_n(10)` returns `55`.
+- `sum_to_n(100)` returns `5050`.
+"""
