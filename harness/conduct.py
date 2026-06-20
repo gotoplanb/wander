@@ -1,4 +1,4 @@
-"""Thin synchronous HTTP client for Conduct's `/jobs` + `/models` APIs.
+"""Thin synchronous HTTP client for Conduct's `/jobs` API.
 
 Used by the bench runner to orchestrate `code_generation` -> `code_eval`
 loops harness-side (per the "clients orchestrate, primitives are dumb"
@@ -12,7 +12,10 @@ NOT what bench runs should use — admin bypasses per-client rate limits
 and ownership scoping that keep multi-client deployments honest.
 
 The MCP wrapper (mcp_server.py) sits in front of the same routes and adds
-an OAuth-bearer principal layer; the bench skips that and goes direct.
+an OAuth-bearer principal layer. The client surface is the same — both
+go through the routing engine, neither lets the client pick models. Multi-
+model bench fan-out is `force_shadows=True` over a Conduct-configured
+`eval_shadow_models` set; see bench/runner/orchestrator.py.
 """
 
 from __future__ import annotations
@@ -33,7 +36,12 @@ class ConductError(RuntimeError):
 
 @dataclass(frozen=True)
 class Job:
-    """Subset of Conduct's `JobOut` the bench actually reads."""
+    """Subset of Conduct's `JobOut` the bench actually reads.
+
+    Used for both primary jobs and code_eval evaluator jobs. Shadows have
+    their own dataclass (`Shadow`) because the /shadows endpoint returns a
+    slightly different shape (no task_type, no metadata).
+    """
 
     job_id: str
     status: str
@@ -55,6 +63,32 @@ class Job:
             error=d.get("error"),
             media_url=d.get("media_url"),
             metadata=d.get("metadata") or {},
+        )
+
+
+@dataclass(frozen=True)
+class Shadow:
+    """One eval-shadow row from GET /jobs/{parent_id}/shadows.
+
+    `shadow_id` is the field the bench passes as `inputs.target_job_id` to
+    code_eval — Conduct's `_resolve_code_eval_target` accepts either a Job
+    UUID or a JobShadow UUID (conduct#35).
+    """
+
+    shadow_id: str
+    model: str
+    status: str
+    response: str | None
+    error: str | None
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> Shadow:
+        return cls(
+            shadow_id=str(d["id"]),
+            model=str(d["model"]),
+            status=str(d["status"]),
+            response=d.get("response"),
+            error=d.get("error"),
         )
 
 
@@ -102,20 +136,26 @@ class ConductClient:
         task_type: str,
         prompt: str,
         system_prompt: str = "",
-        model: str | None = None,
         inputs: dict[str, Any] | None = None,
         is_async: bool = False,
+        force_shadows: bool = False,
     ) -> Job:
-        """POST /jobs. Returns the job (possibly still pending if async)."""
+        """POST /jobs. Returns the job (possibly still pending if async).
+
+        No `model` parameter — clients don't pick models. The routing rule
+        for `task_type` decides the primary; `force_shadows=True` fans out
+        every configured `eval_shadow_models` entry as a parallel JobShadow
+        regardless of the rule's sampling rate. The harness multi-model
+        bench depends on that fan-out path.
+        """
         body: dict[str, Any] = {
             "task_type": task_type,
             "prompt": prompt,
             "system_prompt": system_prompt,
             "inputs": inputs or {},
             "async": is_async,
+            "force_shadows": force_shadows,
         }
-        if model is not None:
-            body["model"] = model
         resp = self._post("/jobs", json=body)
         # Async enqueue returns a minimal {job_id, status, poll_url} 202;
         # sync returns a full JobOut. Normalize by re-fetching when needed.
@@ -127,13 +167,15 @@ class ConductClient:
         """GET /jobs/{job_id}."""
         return Job.from_dict(self._get(f"/jobs/{job_id}"))
 
-    def list_local_models(self) -> list[dict[str, Any]]:
-        """GET /models — returns the locally-installed Ollama models.
-        Each entry: {name, status, resident, size_gb, last_used}. Cloud
-        providers are not included here.
+    def list_shadows(self, parent_job_id: str) -> list[Shadow]:
+        """GET /jobs/{parent_job_id}/shadows.
+
+        Returns the eval-shadow rows for the given parent — one per model
+        the routing rule fanned out to. Each carries its own `shadow_id`
+        that can be passed as `inputs.target_job_id` to code_eval.
         """
-        data = self._get("/models")
-        return list(data.get("local") or [])
+        data = self._get(f"/jobs/{parent_job_id}/shadows")
+        return [Shadow.from_dict(s) for s in (data.get("shadows") or [])]
 
     # ----- polling ------------------------------------------------------
 

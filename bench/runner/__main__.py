@@ -1,8 +1,13 @@
-"""CLI entrypoint: `python -m bench.runner --spec <id> [--model M ...]`.
+"""CLI entrypoint: `python -m bench.runner --spec <id>`.
 
-Prints a per-model summary at the end so a single command tells you which
-models compiled, which passed the golden suite, and at what score. The
-SQLite store at bench/runs/runs.db keeps the persistent record.
+The fleet is Conduct's `code_generation` routing rule (preferred_model
++ eval_shadow_models). To change which models compete, change the rule
+— the harness has no model-selection knobs by design (clients don't
+pick models on Conduct).
+
+Prints a per-model summary after the run: primary first, then every
+shadow, with gen + eval status and dimensions. The SQLite store at
+bench/runs/runs.db keeps the persistent record.
 """
 
 from __future__ import annotations
@@ -20,21 +25,15 @@ def _parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="bench.runner",
         description=(
-            "Fan out one spec to a fleet of models via Conduct's "
-            "code_generation + code_eval primitives, persist results to "
+            "Run one spec across the Conduct-configured fleet "
+            "(preferred_model + eval_shadow_models on the code_generation "
+            "routing rule), persist per-model dimensions to "
             "bench/runs/runs.db, and print a summary."
         ),
     )
     p.add_argument(
         "--spec", required=True,
         help="Spec id (filename stem under bench/specs/*.toml), e.g. bubble_sort",
-    )
-    p.add_argument(
-        "--model", action="append", default=None,
-        help=(
-            "Model to include in the fleet. Repeatable. Default: every local "
-            "Ollama model Conduct reports as `resident`."
-        ),
     )
     p.add_argument(
         "--poll-timeout-s", type=float, default=600.0,
@@ -53,22 +52,35 @@ def _print_summary(summary: RunSummary) -> None:
     print(f"  started:  {summary.started_at}")
     print(f"  finished: {summary.finished_at}")
     print()
-    header = f"  {'model':<28} {'gen':<10} {'eval':<10}  dimensions"
+    header = (
+        f"  {'kind':<7} {'model':<28} {'gen':<10} {'eval':<10}  dimensions"
+    )
     print(header)
-    print(f"  {'-' * 26:<28} {'-' * 8:<10} {'-' * 8:<10}  {'-' * 30}")
+    print(
+        f"  {'-' * 5:<7} {'-' * 26:<28} {'-' * 8:<10} {'-' * 8:<10}  "
+        f"{'-' * 30}"
+    )
     for r in summary.results:
         dims = ", ".join(
             f"{k}={v:.2f}" for k, v in sorted(r.dimensions.items())
         ) or "—"
         eval_status = r.eval_status or "(skipped)"
         print(
-            f"  {r.model:<28} {r.gen_status:<10} {eval_status:<10}  {dims}"
+            f"  {r.kind:<7} {r.model:<28} {r.gen_status:<10} "
+            f"{eval_status:<10}  {dims}"
         )
         if r.gen_error:
             print(f"      gen error:  {r.gen_error}")
         if r.eval_error:
             print(f"      eval error: {r.eval_error}")
     print()
+    if len(summary.results) == 1:
+        print(
+            "  note: only the primary ran — the code_generation routing "
+            "rule has no eval_shadow_models configured. Add shadows to "
+            "the rule to get multi-model fan-out."
+        )
+        print()
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -79,7 +91,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     try:
         summary = run_spec(
-            args.spec, models=args.model, poll_timeout_s=args.poll_timeout_s,
+            args.spec, poll_timeout_s=args.poll_timeout_s,
         )
     except ConductError as e:
         print(f"conduct error: {e}", file=sys.stderr)
@@ -88,9 +100,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"not found: {e}", file=sys.stderr)
         return 2
     _print_summary(summary)
-    # Exit 0 unless every model failed outright at the gen stage — partial
-    # runs (some models pass, some fail) are still useful bench data.
-    if all(r.gen_status in {"submit_failed", "poll_failed"} for r in summary.results):
+    # Exit 0 unless the primary itself failed at gen — partial runs (primary
+    # ok, some shadows failed) are still useful bench data.
+    primary = summary.results[0] if summary.results else None
+    if primary is None or primary.gen_status not in {"complete"}:
         return 1
     return 0
 

@@ -1,18 +1,28 @@
 """Per-spec multi-model orchestrator.
 
-Sequential by design — code_generation jobs against local Ollama serialize
-through one GPU anyway, and the walking skeleton's readability beats any
-threading we'd add. When #6 reports a real bench across N specs * M
-models, threading-per-spec lives one layer up (a parallel-pipeline driver
-above run_spec), not inside it.
+Submits ONE `code_generation` job per spec with `force_shadows=True`.
+Conduct's routing engine — not the client — decides which models compete:
+the rule's `preferred_model` runs as the primary, every entry in
+`eval_shadow_models` runs as a parallel JobShadow with its own Cargo
+artifact (conduct#35). After the primary completes, the harness calls
+`list_shadows` and submits one `code_eval` against each target_job_id
+(primary first, then every shadow), so per-model dimensions land on
+each generated artifact independently. That's also what makes the
+`/datasets/preferences?method=composite` export produce clean
+same-input (chosen, rejected) pairs for the eventual DPO run (#7).
 
-The fan-out to "the model fleet" is harness-driven, not delegated to
-Conduct's shadow infrastructure: each (spec, model) pair becomes its own
-`code_generation` job with an explicit `model=<m>` override. That keeps
-the harness in control of which models compete, lets us mix cloud + local
-freely, and doesn't require operator routing-rule changes per fleet
-change. Conduct's eval-shadow path (`force_shadows`) remains available
-for callers who want it, but the bench has no use for it.
+What the client owns:
+- "evaluate this spec"
+- the golden suite payload
+- per-target code_eval orchestration + result persistence
+
+What Conduct owns:
+- which models are in the fleet (via the routing rule)
+- whether/when each model runs
+- artifact storage per (primary, shadow)
+
+There is no `--model` flag and no `models=` orchestrator argument by
+design. If you want a different fleet, change the routing rule.
 """
 
 from __future__ import annotations
@@ -25,7 +35,7 @@ from typing import Any
 
 from bench.goldens import load_golden
 from bench.specs import load_spec
-from harness.conduct import ConductClient, ConductError, Job
+from harness.conduct import ConductClient, ConductError, Job, Shadow
 
 from .store import Store
 
@@ -33,12 +43,14 @@ log = logging.getLogger(__name__)
 
 
 @dataclass
-class ModelResult:
-    """One model's outcome on a single spec."""
+class TargetResult:
+    """One model's outcome — either the primary gen or one of its shadows."""
 
+    kind: str  # "job" | "shadow"
     model: str
-    gen_status: str
-    gen_job_id: str | None = None
+    conduct_job_id: str
+    parent_conduct_job_id: str | None = None
+    gen_status: str = "pending"
     artifact_url: str | None = None
     gen_error: str | None = None
     eval_status: str | None = None
@@ -55,33 +67,14 @@ class RunSummary:
     spec_id: str
     started_at: str
     finished_at: str
-    results: list[ModelResult]
+    results: list[TargetResult]
 
 
-# `apply_to_target` writes the evaluator's dimensions back to the gen job's
-# `quality_scores`, which is what `/eval/compare` reads when assembling the
-# multi-model rollup #6 will eventually print.
 _EVAL_COMMANDS = ("check", "build", "test")
 
 
-def _resolve_fleet(client: ConductClient, override: list[str] | None) -> list[str]:
-    if override:
-        return list(override)
-    models = client.list_local_models()
-    fleet = [
-        str(m["name"]) for m in models if m.get("resident") and m.get("name")
-    ]
-    if not fleet:
-        raise ConductError(
-            "no resident local models found via GET /models — pass an explicit "
-            "fleet via --model, or add models to RESIDENT_MODELS in the Conduct "
-            "deployment"
-        )
-    return sorted(fleet)
-
-
-def _submit_gen(
-    client: ConductClient, *, spec_id: str, model: str
+def _submit_primary_gen(
+    client: ConductClient, *, spec_id: str
 ) -> Job:
     spec = load_spec(spec_id)
     kwargs = spec.code_generation_kwargs()
@@ -89,9 +82,9 @@ def _submit_gen(
         task_type=kwargs["task_type"],
         prompt=kwargs["prompt"],
         system_prompt=kwargs["system_prompt"],
-        model=model,
         inputs={"artifact": "cargo"},  # opt-in to tarball storage (conduct#23)
-        is_async=True,  # let the worker own the model swap if needed
+        is_async=True,                 # let the worker own the model swap
+        force_shadows=True,            # fan out the rule's eval_shadow_models
     )
 
 
@@ -103,9 +96,9 @@ def _artifact_url_from(job: Job) -> str | None:
 
 
 def _submit_eval(
-    client: ConductClient, *, target_job_id: str, golden_src: str
+    client: ConductClient, *, target_job_id: str, golden_src: str, spec_id: str
 ) -> Job:
-    suites = [{"dimension": "golden", "files": {"tests/golden.rs": golden_src}}]
+    suites = [{"dimension": "golden", "files": {f"tests/{spec_id}.rs": golden_src}}]
     return client.create_job(
         task_type="code_eval",
         prompt="",  # code_eval is deterministic — no model, no prompt
@@ -140,78 +133,35 @@ def _parse_eval_verdict(job: Job) -> tuple[dict[str, float], dict[str, Any] | No
     return {}, None
 
 
-def _process_model(
+def _eval_one_target(
     *,
     client: ConductClient,
     store: Store,
     run_id: int,
-    spec_id: str,
-    model: str,
+    result: TargetResult,
+    gen_row_id: int,
     golden_src: str,
+    spec_id: str,
     poll_timeout_s: float,
-) -> ModelResult:
-    """Drive one (spec, model) end-to-end. Persists at each step so a
-    Ctrl-C still leaves a partial row to inspect."""
-    result = ModelResult(model=model, gen_status="pending")
-
-    # 1) submit code_generation
-    try:
-        gen = _submit_gen(client, spec_id=spec_id, model=model)
-    except ConductError as e:
-        log.error("[%s] gen submit failed: %s", model, e)
-        result.gen_status = "submit_failed"
-        result.gen_error = str(e)
-        store.upsert_gen_job(
-            run_id=run_id, model=model, conduct_job_id=None,
-            status=result.gen_status, artifact_url=None, error=result.gen_error,
-        )
-        return result
-
-    result.gen_job_id = gen.job_id
-    gen_row_id = store.upsert_gen_job(
-        run_id=run_id, model=model, conduct_job_id=gen.job_id,
-        status=gen.status, artifact_url=None, error=None,
-    )
-
-    # 2) poll code_generation
-    try:
-        gen = client.poll_until_terminal(gen.job_id, timeout_s=poll_timeout_s)
-    except ConductError as e:
-        log.error("[%s] gen poll failed: %s", model, e)
-        result.gen_status = "poll_failed"
-        result.gen_error = str(e)
-        store.upsert_gen_job(
-            run_id=run_id, model=model, conduct_job_id=result.gen_job_id,
-            status=result.gen_status, artifact_url=None, error=result.gen_error,
-        )
-        return result
-
-    result.gen_status = gen.status
-    result.gen_error = gen.error
-    result.artifact_url = _artifact_url_from(gen)
-    store.upsert_gen_job(
-        run_id=run_id, model=model, conduct_job_id=gen.job_id,
-        status=gen.status, artifact_url=result.artifact_url, error=gen.error,
-    )
-
-    if gen.status != "complete" or not result.artifact_url:
-        # The gen job didn't produce a runnable artifact — skip the eval.
-        return result
-
-    # 3) submit code_eval with the golden suite
+) -> None:
+    """Submit + poll + persist the code_eval for one target (primary or shadow).
+    Mutates `result` in place and writes to the store."""
     try:
         ev = _submit_eval(
-            client, target_job_id=gen.job_id, golden_src=golden_src
+            client,
+            target_job_id=result.conduct_job_id,
+            golden_src=golden_src,
+            spec_id=spec_id,
         )
     except ConductError as e:
-        log.error("[%s] eval submit failed: %s", model, e)
+        log.error("[%s] eval submit failed: %s", result.model, e)
         result.eval_status = "submit_failed"
         result.eval_error = str(e)
         store.upsert_eval_job(
             run_id=run_id, gen_job_id=gen_row_id, conduct_job_id=None,
             status=result.eval_status, error=result.eval_error,
         )
-        return result
+        return
 
     result.eval_job_id = ev.job_id
     eval_row_id = store.upsert_eval_job(
@@ -219,18 +169,17 @@ def _process_model(
         status=ev.status, error=None,
     )
 
-    # 4) poll code_eval
     try:
         ev = client.poll_until_terminal(ev.job_id, timeout_s=poll_timeout_s)
     except ConductError as e:
-        log.error("[%s] eval poll failed: %s", model, e)
+        log.error("[%s] eval poll failed: %s", result.model, e)
         result.eval_status = "poll_failed"
         result.eval_error = str(e)
         store.upsert_eval_job(
             run_id=run_id, gen_job_id=gen_row_id, conduct_job_id=result.eval_job_id,
             status=result.eval_status, error=result.eval_error,
         )
-        return result
+        return
 
     result.eval_status = ev.status
     result.eval_error = ev.error
@@ -239,7 +188,6 @@ def _process_model(
         status=ev.status, error=ev.error,
     )
 
-    # 5) extract + persist dimensions
     if ev.status == "complete":
         dims, verdict = _parse_eval_verdict(ev)
         result.dimensions = dims
@@ -252,23 +200,57 @@ def _process_model(
                 detail=detail if isinstance(detail, dict) else None,
             )
 
-    return result
+
+def _persist_target(store: Store, *, run_id: int, r: TargetResult) -> int:
+    return store.upsert_gen_job(
+        run_id=run_id, kind=r.kind, model=r.model,
+        conduct_job_id=r.conduct_job_id,
+        parent_conduct_job_id=r.parent_conduct_job_id,
+        status=r.gen_status, artifact_url=r.artifact_url, error=r.gen_error,
+    )
+
+
+def _target_from_primary(job: Job) -> TargetResult:
+    return TargetResult(
+        kind="job",
+        model=job.model_used or "(unknown)",
+        conduct_job_id=job.job_id,
+        gen_status=job.status,
+        artifact_url=_artifact_url_from(job),
+        gen_error=job.error,
+    )
+
+
+def _target_from_shadow(s: Shadow, *, parent_id: str) -> TargetResult:
+    # Shadow rows from /jobs/{id}/shadows don't carry the artifact URL on
+    # the wire (the route's ShadowOut model omits shadow_metadata). We
+    # don't need it client-side: code_eval's `_resolve_code_eval_target`
+    # reads the shadow's artifact server-side off shadow_metadata. The
+    # gen_status of "complete" (with no error) is sufficient signal to
+    # proceed with the eval.
+    return TargetResult(
+        kind="shadow",
+        model=s.model,
+        conduct_job_id=s.shadow_id,
+        parent_conduct_job_id=parent_id,
+        gen_status=s.status,
+        artifact_url=None,
+        gen_error=s.error,
+    )
 
 
 def run_spec(
     spec_id: str,
     *,
-    models: list[str] | None = None,
     client: ConductClient | None = None,
     store: Store | None = None,
     poll_timeout_s: float = 600.0,
 ) -> RunSummary:
-    """Run one spec across the fleet end-to-end, persisting results.
+    """Run one spec across the Conduct-configured fleet end-to-end.
 
-    Models default to whatever local Ollama models Conduct reports as
-    `resident=True`. Pass an explicit list to target cloud models or
-    specific Ollama tags. The client + store args are for testing —
-    callers normally let `run_spec` open both.
+    No fleet argument by design — the harness doesn't pick models. To
+    change which models compete on `code_generation`, edit the routing
+    rule's `eval_shadow_models` in Conduct.
     """
     golden_src = load_golden(spec_id)  # fail fast if missing
 
@@ -277,29 +259,60 @@ def run_spec(
     client = client or ConductClient()
     store = store or Store()
     try:
-        fleet = _resolve_fleet(client, models)
         started = datetime.now(UTC).isoformat(timespec="seconds")
         run_id = store.start_run(spec_id, started_at=started)
-        log.info(
-            "run %d started for spec=%s fleet=%s", run_id, spec_id, fleet
-        )
 
-        results: list[ModelResult] = []
-        for model in fleet:
-            log.info("[%s] starting", model)
-            results.append(
-                _process_model(
-                    client=client, store=store, run_id=run_id, spec_id=spec_id,
-                    model=model, golden_src=golden_src,
-                    poll_timeout_s=poll_timeout_s,
-                )
+        # 1) Submit the primary code_generation with force_shadows=True.
+        try:
+            primary = _submit_primary_gen(client, spec_id=spec_id)
+        except ConductError as e:
+            log.error("primary gen submit failed: %s", e)
+            finished = datetime.now(UTC).isoformat(timespec="seconds")
+            store.finish_run(run_id, finished_at=finished)
+            raise
+
+        # 2) Poll the primary.
+        try:
+            primary = client.poll_until_terminal(
+                primary.job_id, timeout_s=poll_timeout_s
+            )
+        except ConductError as e:
+            log.error("primary gen poll failed: %s", e)
+            finished = datetime.now(UTC).isoformat(timespec="seconds")
+            store.finish_run(run_id, finished_at=finished)
+            raise
+
+        # 3) Build target list: primary + every shadow (in deterministic order).
+        primary_result = _target_from_primary(primary)
+        shadows = (
+            client.list_shadows(primary.job_id)
+            if primary.status == "complete"
+            else []
+        )
+        log.info(
+            "primary=%s status=%s; %d shadow(s)",
+            primary_result.model, primary_result.gen_status, len(shadows),
+        )
+        targets: list[TargetResult] = [primary_result] + [
+            _target_from_shadow(s, parent_id=primary.job_id) for s in shadows
+        ]
+
+        # 4) For each target: persist + (if generated cleanly) submit code_eval.
+        for t in targets:
+            gen_row_id = _persist_target(store, run_id=run_id, r=t)
+            if t.gen_status != "complete":
+                continue
+            _eval_one_target(
+                client=client, store=store, run_id=run_id, result=t,
+                gen_row_id=gen_row_id, golden_src=golden_src, spec_id=spec_id,
+                poll_timeout_s=poll_timeout_s,
             )
 
         finished = datetime.now(UTC).isoformat(timespec="seconds")
         store.finish_run(run_id, finished_at=finished)
         return RunSummary(
             run_id=run_id, spec_id=spec_id,
-            started_at=started, finished_at=finished, results=results,
+            started_at=started, finished_at=finished, results=targets,
         )
     finally:
         if owned_store:
