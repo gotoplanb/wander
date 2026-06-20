@@ -43,7 +43,7 @@ Results land in `bench/runs/runs.db` (with `kind` distinguishing the primary `jo
 
 The runner uses exactly two Conduct task types:
 
-- **`code_generation`** ([conduct#23](https://github.com/gotoplanb/conduct/issues/23)). The runner submits **one** job per spec with `inputs={"artifact": "cargo"}` + `force_shadows=true`. The primary stores its artifact at `metadata.artifact.url`; each shadow stores its own at `/output/{shadow.id}.tar` under `shadow_metadata.artifact` ([conduct#35](https://github.com/gotoplanb/conduct/issues/35)).
+- **`code_generation`** ([conduct#23](https://github.com/gotoplanb/conduct/issues/23)). The runner submits **one** job per spec with `inputs={"artifact": "cargo"}` + `force_shadows=true`. The system prompt asks the model for **two path-tagged fenced blocks** (``` ```toml Cargo.toml ``` ``` and ``` ```rust src/lib.rs ``` ```), not a JSON manifest — local fleet models reliably botch the JSON-string-per-file format, while every model in the fleet handles fenced blocks cleanly ([conduct#36](https://github.com/gotoplanb/conduct/issues/36)). The primary stores its artifact at `metadata.artifact.url`; each shadow stores its own at `/output/{shadow.id}.tar` under `shadow_metadata.artifact` ([conduct#35](https://github.com/gotoplanb/conduct/issues/35)). Shadow fan-out is independent of primary success — a flaky primary no longer takes the comparison with it.
 - **`code_eval`** ([conduct#25](https://github.com/gotoplanb/conduct/issues/25), [conduct#26](https://github.com/gotoplanb/conduct/issues/26)). For each generated target — primary + every shadow — the runner submits one evaluator job with:
 
   ```python
@@ -68,6 +68,6 @@ Three reasons the harness drives multi-model bench through Conduct's shadow infr
 2. **Clients don't pick models on Conduct.** Even the HTTP `model` kwarg on `POST /jobs` only lets the client pick from the rule's allowed set, gated by sensitivity. The MCP create_job tool omits it entirely. Both paths converge on "the rule decides" — and the bench should reflect that, not paper over it with a `--model` flag.
 3. **Operational separation of concerns.** "Which models do we compare on this task" is a deployment-config decision (the routing rule), not a per-run client knob. Changing the fleet is one Conduct call, not 20 client invocations.
 
-## Dependency for actual multi-model fan-out
+## Fleet (as of conduct#36)
 
-The `code_generation` routing rule currently has no `eval_shadow_models` configured ([conduct/config/seed.routing.yaml](https://github.com/gotoplanb/conduct/blob/main/config/seed.routing.yaml#L128) is `# TODO: add cloud shadows once ANTHROPIC_API_KEY is configured`). Until those are populated, `force_shadows=true` produces zero shadows and the bench will only ever record the primary's dimensions — the runner reports this explicitly with a `note:` line at the end of the summary.
+`code_generation` now routes to a local-only fleet: primary `qwen3.5:9b`, shadows `gemma4:e4b` + `llama3.2:3b`. All free, all run on the host Ollama. To change the fleet, edit the rule in [`conduct/config/seed.routing.yaml`](https://github.com/gotoplanb/conduct/blob/main/config/seed.routing.yaml#L128) — never via a client flag.
