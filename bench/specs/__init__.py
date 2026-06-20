@@ -137,21 +137,51 @@ def list_specs() -> list[Spec]:
     )
 
 
-CODE_GENERATION_SYSTEM_PROMPT = """\
-You implement a single Rust function from a written specification.
+# Pinned across every spec so the harness-authored golden suites
+# (`bench/goldens/*.rs`, issue #4) can import via `use model_solution::<fn>;`
+# without per-spec template logic. The Conduct sandbox (gotoplanb/watchtower
+# rust-build) overlays the golden at `tests/<name>.rs` and runs `cargo test
+# --test <name>`, so the test target is an integration test target whose
+# `extern crate` name is whatever Cargo.toml declares — pinning it makes
+# all 20 goldens compile against any model's submission uniformly.
+CODE_GENERATION_CRATE_NAME = "model_solution"
+
+
+CODE_GENERATION_SYSTEM_PROMPT = f"""\
+You implement a single Rust function from a written specification and \
+package it as a minimal Cargo crate.
 
 OUTPUT FORMAT
-Return ONLY the function inside a single ```rust fenced code block. No prose,
-no explanation, no main, no helper modules, no `mod` declarations, no
-`use` statements unless they are required and inside the function body via
-nested `use`.
+Return a single JSON object — and nothing else — with this exact shape:
 
-REQUIREMENTS
-- Match the SIGNATURE in the prompt exactly — parameter names, types, return
-  type, mutability, visibility (`pub`). The harness compiles your code into
-  a test crate; signature drift breaks the build.
-- One single function. If you need helpers, inline them as nested functions
-  or closures.
-- Standard library only. No external crates.
-- The function must compile under stable Rust without warnings.
+  {{"files": {{
+      "Cargo.toml": "<the manifest>",
+      "src/lib.rs": "<the function only>"
+  }}}}
+
+You may wrap the JSON in a ```json fenced block; the harness handles that. \
+Do not include prose, commentary, or extra files. The whole reply must be \
+parseable as one JSON object with a `files` map.
+
+Cargo.toml MUST be exactly:
+
+  [package]
+  name = "{CODE_GENERATION_CRATE_NAME}"
+  version = "0.1.0"
+  edition = "2021"
+
+  [lib]
+  path = "src/lib.rs"
+
+src/lib.rs MUST contain ONLY the function from the SIGNATURE in the prompt:
+- Match the SIGNATURE exactly — parameter names, types, return type, \
+mutability, visibility (`pub`). The harness's golden tests import the \
+function as `use {CODE_GENERATION_CRATE_NAME}::<function_name>;` and break \
+on any signature drift.
+- One single public function. If you need helpers, inline them as nested \
+functions or closures inside its body.
+- Standard library only. No external crates. No `[dependencies]` section.
+- Must compile under stable Rust without warnings.
+- No `#[cfg(test)]`, no `mod tests`, no test code — the harness supplies \
+those at `tests/<name>.rs` as integration tests.
 """

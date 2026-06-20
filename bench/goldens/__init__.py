@@ -9,12 +9,15 @@ per spec per model is the headline dimension of the bench report (#6).
 Convention
 ----------
 - One file per spec; filename is `<spec_id>.rs`.
-- Each file contains a `#[cfg(test)] mod tests { ... }` block.
-- Inside the block: `use super::<function_name>;` and a series of
-  `#[test] fn ...` cases.
-- Tests are written assuming the model's generated function is exposed at
-  the parent module level. The sandbox wraps the model's code at the
-  parent module so `super::<function_name>` resolves at compile time.
+- Each file is a **Cargo integration test**: top-level `#[test] fn ...`
+  functions plus a single `use model_solution::<function_name>;` import.
+  No `#[cfg(test)]` wrapper, no `mod tests { ... }` block.
+- The Conduct sandbox (gotoplanb/watchtower rust-build) overlays the file
+  at `tests/<spec_id>.rs` and runs `cargo test --test <spec_id>`. The
+  test target is a separate crate, so the model's function is imported
+  via the pinned crate name (`model_solution`, set in
+  `bench/specs/__init__.py::CODE_GENERATION_CRATE_NAME`) — not via
+  `use super::`.
 
 Why this layout
 ---------------
@@ -63,16 +66,23 @@ def list_goldens() -> dict[str, str]:
     return out
 
 
+_PINNED_CRATE = "model_solution"
+
+
 def _validate(source: str, path: Path) -> None:
     """Cheap structural checks. Real validation is the sandbox compile."""
     if "#[test]" not in source:
         raise ValueError(f"{path.name}: no #[test] annotations found")
-    if "#[cfg(test)]" not in source:
-        raise ValueError(f"{path.name}: expected a #[cfg(test)] block")
-    if "mod tests" not in source:
-        raise ValueError(f"{path.name}: expected a `mod tests` block")
-    if "use super::" not in source:
+    if f"use {_PINNED_CRATE}::" not in source:
         raise ValueError(
-            f"{path.name}: expected `use super::<function_name>;` — the "
-            f"sandbox exposes the model's function at the parent module"
+            f"{path.name}: expected `use {_PINNED_CRATE}::<function_name>;` — "
+            f"the Conduct sandbox runs goldens as Cargo integration tests "
+            f"against a crate pinned to {_PINNED_CRATE!r}"
+        )
+    # Catch the old `mod tests { ... }` shape so a stale file fails loudly
+    # rather than silently silently breaking the live sandbox run.
+    if "mod tests" in source or "#[cfg(test)]" in source:
+        raise ValueError(
+            f"{path.name}: goldens are bare integration tests now — no "
+            f"`#[cfg(test)] mod tests {{ ... }}` wrapper"
         )
