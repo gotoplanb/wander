@@ -10,3 +10,5 @@ venv/
 !episodes/*/episode.sqlite
 wanderer-session.json
 .env
+# Local bench results — runs are per-machine and rebuildable from Conduct.
+bench/runs/

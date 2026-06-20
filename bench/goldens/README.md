@@ -5,15 +5,12 @@ Issue [#4](https://github.com/gotoplanb/wander/issues/4). One Rust test file per
 ## Convention
 
 - One file per spec: `bench/goldens/<spec_id>.rs`
-- Each file is a `#[cfg(test)] mod tests { ... }` block
-- Inside: `use super::<function_name>;` + a series of `#[test] fn ...` cases
-- Standard library only — `assert_eq!` / `assert!` only, no third-party assertion crates
+- Each file is a Cargo **integration test**: top-level `#[test] fn ...` cases plus one `use model_solution::<function_name>;` import. No `#[cfg(test)]` wrapper, no `mod tests { ... }` block.
+- Standard library only — `assert_eq!` / `assert!` only, no third-party assertion crates.
 
 ## Sandbox contract
 
-These files are submitted to Conduct `code_eval` ([conduct#26](https://github.com/gotoplanb/conduct/issues/26)) when that lands. The sandbox wraps the model's generated function at the parent module so `use super::<function_name>;` resolves at compile time. Pass rate per spec per model is the golden dimension of the bench report ([#6](https://github.com/gotoplanb/wander/issues/6)).
-
-Until [conduct#26](https://github.com/gotoplanb/conduct/issues/26) lands, these files are static reference suites — readable, reviewable, ready to ship the moment the executor is there.
+These files are submitted to Conduct `code_eval` ([conduct#26](https://github.com/gotoplanb/conduct/issues/26)) as suite payloads. The sandbox ([watchtower rust-build](https://github.com/gotoplanb/watchtower/tree/main/services/rust-build)) overlays each golden at `tests/<spec_id>.rs` and runs `cargo test --test <spec_id>`. Because that's a separate test target (its own crate), the model's function is imported via the pinned crate name `model_solution` — set in [`bench/specs/__init__.py`](../specs/__init__.py) as `CODE_GENERATION_CRATE_NAME` and required by the system prompt the model sees. Pass rate per spec per model is the golden dimension of the bench report ([#6](https://github.com/gotoplanb/wander/issues/6)).
 
 ## Usage
 
