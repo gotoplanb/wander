@@ -2,17 +2,21 @@
 
 Tables:
 
-    runs           one row per (spec, fleet) execution
-    gen_jobs       one row per (run, model) — the code_generation job
+    runs           one row per spec execution
+    gen_jobs       one row per generated artifact — the primary code_generation
+                   PLUS one row per eval-shadow it fanned out to. `kind`
+                   distinguishes (`job` vs `shadow`). `parent_conduct_job_id`
+                   links a shadow back to its primary's Conduct id.
     eval_jobs      one row per gen_job — the code_eval follow-up
     dimensions     one row per (eval_job, dimension_name) — compile, golden,
-                   property, ... — the per-dimension score the bench reads
+                   property, ... — the per-model score the bench reads
                    to rank models in #6.
 
-The dimensions table is the read path for the bench report. It mirrors
-what Conduct's `/eval/compare` rollup also returns, but keeping a local
-copy lets the harness diff runs across time without depending on the
-server's retention policy.
+A "model" appears in two rows when it's the primary on one run and a
+shadow on another, so we key gen_jobs on (run_id, conduct_job_id),
+not (run_id, model). The harness doesn't pick models — Conduct's
+routing rule does — so a run can legitimately have multiple rows for
+the same model on the same spec across reruns.
 """
 
 from __future__ import annotations
@@ -35,14 +39,16 @@ CREATE TABLE IF NOT EXISTS runs (
 );
 
 CREATE TABLE IF NOT EXISTS gen_jobs (
-    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
-    run_id              INTEGER NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
-    model               TEXT    NOT NULL,
-    conduct_job_id      TEXT,
-    status              TEXT    NOT NULL,
-    artifact_url        TEXT,
-    error               TEXT,
-    UNIQUE(run_id, model)
+    id                       INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id                   INTEGER NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+    kind                     TEXT    NOT NULL CHECK(kind IN ('job', 'shadow')),
+    model                    TEXT    NOT NULL,
+    conduct_job_id           TEXT    NOT NULL,
+    parent_conduct_job_id    TEXT,                  -- null for kind=job, primary's id for kind=shadow
+    status                   TEXT    NOT NULL,
+    artifact_url             TEXT,
+    error                    TEXT,
+    UNIQUE(run_id, conduct_job_id)
 );
 
 CREATE TABLE IF NOT EXISTS eval_jobs (
@@ -73,8 +79,10 @@ CREATE INDEX IF NOT EXISTS idx_dimensions_eval ON dimensions(eval_job_id);
 @dataclass(frozen=True)
 class GenJobRow:
     id: int
+    kind: str
     model: str
-    conduct_job_id: str | None
+    conduct_job_id: str
+    parent_conduct_job_id: str | None
     status: str
     artifact_url: str | None
     error: str | None
@@ -143,8 +151,10 @@ class Store:
         self,
         *,
         run_id: int,
+        kind: str,
         model: str,
-        conduct_job_id: str | None,
+        conduct_job_id: str,
+        parent_conduct_job_id: str | None,
         status: str,
         artifact_url: str | None,
         error: str | None,
@@ -153,19 +163,23 @@ class Store:
             cur.execute(
                 """
                 INSERT INTO gen_jobs
-                    (run_id, model, conduct_job_id, status, artifact_url, error)
-                VALUES (?, ?, ?, ?, ?, ?)
-                ON CONFLICT(run_id, model) DO UPDATE SET
-                    conduct_job_id = excluded.conduct_job_id,
-                    status         = excluded.status,
-                    artifact_url   = excluded.artifact_url,
-                    error          = excluded.error
+                    (run_id, kind, model, conduct_job_id,
+                     parent_conduct_job_id, status, artifact_url, error)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(run_id, conduct_job_id) DO UPDATE SET
+                    kind                   = excluded.kind,
+                    model                  = excluded.model,
+                    parent_conduct_job_id  = excluded.parent_conduct_job_id,
+                    status                 = excluded.status,
+                    artifact_url           = excluded.artifact_url,
+                    error                  = excluded.error
                 """,
-                (run_id, model, conduct_job_id, status, artifact_url, error),
+                (run_id, kind, model, conduct_job_id, parent_conduct_job_id,
+                 status, artifact_url, error),
             )
             row = cur.execute(
-                "SELECT id FROM gen_jobs WHERE run_id = ? AND model = ?",
-                (run_id, model),
+                "SELECT id FROM gen_jobs WHERE run_id = ? AND conduct_job_id = ?",
+                (run_id, conduct_job_id),
             ).fetchone()
             return int(row[0])
 
@@ -222,8 +236,11 @@ class Store:
 
     def gen_jobs_for_run(self, run_id: int) -> list[GenJobRow]:
         cur = self._conn.execute(
-            "SELECT id, model, conduct_job_id, status, artifact_url, error "
-            "FROM gen_jobs WHERE run_id = ? ORDER BY model",
+            "SELECT id, kind, model, conduct_job_id, parent_conduct_job_id, "
+            "       status, artifact_url, error "
+            "FROM gen_jobs WHERE run_id = ? "
+            # primary first, then shadows, then by model for stability
+            "ORDER BY (kind = 'shadow'), model",
             (run_id,),
         )
         return [GenJobRow(*row) for row in cur.fetchall()]
