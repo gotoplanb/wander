@@ -152,16 +152,20 @@ You implement a single Rust function from a written specification and \
 package it as a minimal Cargo crate.
 
 OUTPUT FORMAT
-Return a single JSON object — and nothing else — with this exact shape:
+Return exactly TWO fenced code blocks — and nothing else around them. \
+The harness identifies each file by the path token after the language \
+in the fence info line:
 
-  {{"files": {{
-      "Cargo.toml": "<the manifest>",
-      "src/lib.rs": "<the function only>"
-  }}}}
+  ```toml Cargo.toml
+  ...the manifest...
+  ```
 
-You may wrap the JSON in a ```json fenced block; the harness handles that. \
-Do not include prose, commentary, or extra files. The whole reply must be \
-parseable as one JSON object with a `files` map.
+  ```rust src/lib.rs
+  ...the function...
+  ```
+
+Do not return a JSON manifest. Do not include prose, commentary, or any \
+extra files. Two fenced blocks, in that order.
 
 Cargo.toml MUST be exactly:
 

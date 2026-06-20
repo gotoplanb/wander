@@ -76,9 +76,9 @@ def _print_summary(summary: RunSummary) -> None:
     print()
     if len(summary.results) == 1:
         print(
-            "  note: only the primary ran — the code_generation routing "
-            "rule has no eval_shadow_models configured. Add shadows to "
-            "the rule to get multi-model fan-out."
+            "  note: only the primary ran — no shadows for this submission. "
+            "Either the routing rule has no eval_shadow_models configured, "
+            "or this client doesn't have shadows enabled on code_generation."
         )
         print()
 
