@@ -33,6 +33,7 @@ class _Row:
     kind: str
     compile: float | None
     golden: float | None
+    property: float | None  # noqa: A003 — column name from the dimensions table
 
 
 def _load_latest_per_spec(db_path: Path) -> list[_Row]:
@@ -55,8 +56,9 @@ def _load_latest_per_spec(db_path: Path) -> list[_Row]:
             )
             SELECT
               r.spec_id, g.model, g.kind,
-              MAX(CASE WHEN d.name = 'compile' THEN d.score END) AS compile,
-              MAX(CASE WHEN d.name = 'golden'  THEN d.score END) AS golden
+              MAX(CASE WHEN d.name = 'compile'  THEN d.score END) AS compile,
+              MAX(CASE WHEN d.name = 'golden'   THEN d.score END) AS golden,
+              MAX(CASE WHEN d.name = 'property' THEN d.score END) AS property
             FROM latest_run r
             JOIN gen_jobs g ON g.run_id = r.run_id
             LEFT JOIN eval_jobs e ON e.gen_job_id = g.id
@@ -73,9 +75,11 @@ def _load_latest_per_spec(db_path: Path) -> list[_Row]:
 def _summarize_per_model(rows: list[_Row]) -> list[dict[str, object]]:
     """Per-model aggregates across all specs in the dataset.
     `compile_rate` = fraction of specs where compile == 5.
-    `golden_rate` = fraction of specs where compile==5 AND golden==5
-    (golden only ran if compile passed; failing to compile counts
-    against the model on golden too)."""
+    `golden_rate` = fraction of specs where compile==5 AND golden==5.
+    `property_rate` = fraction of specs with a property suite where it
+    passed. Specs without a property suite are excluded from the
+    property denominator so we don't penalize models for spec coverage
+    we haven't authored yet."""
     by_model: dict[str, list[_Row]] = {}
     for r in rows:
         by_model.setdefault(r.model, []).append(r)
@@ -84,9 +88,33 @@ def _summarize_per_model(rows: list[_Row]) -> list[dict[str, object]]:
         n = len(rs)
         compiled = sum(1 for r in rs if (r.compile or 0) >= 5)
         golden_perfect = sum(1 for r in rs if (r.golden or 0) >= 5)
-        # Mean golden score over specs that compiled, 0 otherwise.
         scored = [r.golden or 0.0 for r in rs]
         avg_golden = sum(scored) / n if n else 0.0
+
+        # Property accounting — only count specs where the suite ran
+        # (i.e. some other model on this spec recorded a property score,
+        # which means the property suite exists). We use the model's own
+        # property score; failing to compile counts as a property failure
+        # too (couldn't even attempt the assertions).
+        prop_rows = [
+            r for r in rs
+            if any(
+                pr.property is not None
+                for pr in rows
+                if pr.spec_id == r.spec_id
+            )
+        ]
+        prop_n = len(prop_rows)
+        prop_perfect = sum(
+            1 for r in prop_rows
+            if (r.property or 0) >= 5 and (r.compile or 0) >= 5
+        )
+        prop_scored = [
+            (r.property or 0.0) if (r.compile or 0) >= 5 else 1.0
+            for r in prop_rows
+        ]
+        avg_property = sum(prop_scored) / prop_n if prop_n else None
+
         out.append({
             "model": model,
             "kind": next(iter({r.kind for r in rs})) if len({r.kind for r in rs}) == 1 else "mixed",
@@ -94,23 +122,35 @@ def _summarize_per_model(rows: list[_Row]) -> list[dict[str, object]]:
             "compile_rate": compiled / n if n else 0.0,
             "golden_perfect_rate": golden_perfect / n if n else 0.0,
             "avg_golden": avg_golden,
+            "prop_specs": prop_n,
+            "property_perfect_rate": (prop_perfect / prop_n) if prop_n else None,
+            "avg_property": avg_property,
         })
-    # Headline ranking: compile rate first, then average golden score.
+    # Headline ranking: compile rate, then average golden, then property.
     out.sort(
-        key=lambda r: (-(r["compile_rate"] or 0), -(r["avg_golden"] or 0))
+        key=lambda r: (
+            -(r["compile_rate"] or 0),
+            -(r["avg_golden"] or 0),
+            -((r["avg_property"] or 0) if r["avg_property"] is not None else 0),
+        )
     )
     return out
 
 
-def _format_score(c: float | None, g: float | None) -> str:
-    """Per-cell renderer for the per-spec table."""
+def _format_score(c: float | None, g: float | None, p: float | None) -> str:
+    """Per-cell renderer for the per-spec table.
+
+    Format: ``G/P`` where G is the golden score and P is the property
+    score (each 1-5, or ``-`` if no suite). Compile failures collapse
+    to ``✗``.
+    """
     if c is None:
         return "—"
     if c < 5:
         return "✗"  # didn't compile
-    if g is None:
-        return "?"  # compiled but no golden recorded (shouldn't happen)
-    return f"{int(g)}/5"
+    g_s = f"{int(g)}" if g is not None else "?"
+    p_s = f"{int(p)}" if p is not None else "—"
+    return f"{g_s}/{p_s}"
 
 
 def render(db_path: Path) -> str:
@@ -172,21 +212,33 @@ def render(db_path: Path) -> str:
         "`compile_rate` = fraction of specs the model's submission compiled. "
         "`golden_rate` = fraction where all golden tests passed. "
         "`avg_golden` = mean golden score (1–5) across all specs, with "
-        "failed-to-compile counting as 1."
+        "failed-to-compile counting as 1. `property_rate` and `avg_property` "
+        "use the same convention but are restricted to specs where a "
+        "property suite exists (see `bench/properties/`)."
     )
     lines.append("")
     lines.append(
-        "| Model | Kind | Specs | Compile rate | Golden 5/5 rate | Avg golden |"
+        "| Model | Kind | Specs | Compile rate | Golden 5/5 | Avg golden "
+        "| Prop 5/5 | Avg property |"
     )
     lines.append(
-        "|---|---|---:|---:|---:|---:|"
+        "|---|---|---:|---:|---:|---:|---:|---:|"
     )
     for s in summary:
+        prop_perfect = (
+            f"{s['property_perfect_rate']:.0%}"
+            if s["property_perfect_rate"] is not None else "—"
+        )
+        avg_prop = (
+            f"{s['avg_property']:.2f}"
+            if s["avg_property"] is not None else "—"
+        )
         lines.append(
             f"| `{s['model']}` | {s['kind']} | {s['specs']} | "
             f"{s['compile_rate']:.0%} | "
             f"{s['golden_perfect_rate']:.0%} | "
-            f"{s['avg_golden']:.2f} |"
+            f"{s['avg_golden']:.2f} | "
+            f"{prop_perfect} | {avg_prop} |"
         )
     lines.append("")
 
@@ -194,8 +246,8 @@ def render(db_path: Path) -> str:
     lines.append("## Per-spec breakdown")
     lines.append("")
     lines.append(
-        "Each cell shows `golden / 5` if the model compiled, "
-        "`✗` if it didn't, `—` if no data."
+        "Each cell shows `golden/property` (each 1-5, `—` if no suite) "
+        "when the model compiled, `✗` if it didn't, `—` if no data."
     )
     lines.append("")
     header = "| Spec | " + " | ".join(f"`{m}`" for m in models) + " |"
@@ -209,7 +261,7 @@ def render(db_path: Path) -> str:
             if pair is None:
                 cells.append("—")
             else:
-                cells.append(_format_score(pair.compile, pair.golden))
+                cells.append(_format_score(pair.compile, pair.golden, pair.property))
         lines.append(f"| `{spec}` | " + " | ".join(cells) + " |")
     lines.append("")
 
