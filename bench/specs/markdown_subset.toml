@@ -1,0 +1,70 @@
+schema_version = 1
+id = "markdown_subset"
+title = "Markdown subset → HTML converter (parser + emitter)"
+difficulty = "hard"
+categories = ["string", "parser"]
+signature = "pub fn md_to_html(input: &str) -> String"
+prompt = """
+Implement a small Markdown → HTML converter that supports the subset
+described below. The bench is designed to require a real lexer + parser
++ emitter, not regex tricks, so don't try to fake it.
+
+SIGNATURE (must match exactly):
+    pub fn md_to_html(input: &str) -> String
+
+FEATURES TO SUPPORT
+- **Headings.** A line that starts with `# `, `## `, or `### ` becomes
+  `<h1>`, `<h2>`, or `<h3>` respectively. Trailing newline is stripped.
+  Exactly one space between the `#`s and the text.
+- **Paragraphs.** Consecutive non-blank lines that are NOT headings or
+  list items form one paragraph (`<p>...</p>`). Paragraphs are separated
+  by one or more blank lines. Inside a paragraph, newlines become a
+  single space (no `<br>`).
+- **Bold and italic** (inline within paragraphs/headings/list items):
+  - `**text**` → `<strong>text</strong>`
+  - `*text*` → `<em>text</em>`
+  - The outer pair binds tighter — `**foo**` is bold, not italic-italic.
+- **Inline code.** `` `text` `` → `<code>text</code>`. The text inside
+  is copied verbatim, no further inline markup applied.
+- **Links.** `[text](url)` → `<a href="url">text</a>`. The text may
+  contain bold/italic/code; the url is copied verbatim.
+- **Unordered lists.** A run of consecutive lines starting with `- `
+  (dash-space) form one list. Each line becomes one `<li>...</li>`,
+  wrapped in `<ul>...</ul>`. Inline markup applies inside list items.
+
+OUTPUT FORMAT
+- Block elements are emitted on their own lines, separated by a single
+  `\\n`. The very last block ends without a trailing newline.
+- No surrounding `<html>`/`<body>` wrapper.
+- HTML-escape `<`, `>`, and `&` in text content (NOT in URLs — those
+  are copied verbatim per the spec above). Do not escape inside
+  `<code>`.
+
+EDGE CASES
+- Empty input returns an empty string.
+- A blank line at the start or end of the input is ignored (no empty
+  `<p>` emitted).
+- `####` (four or more) is NOT a heading — treat as paragraph text.
+- A line starting with `-` but no space (`-foo`) is NOT a list item.
+- Unclosed `**` / `*` / `` ` `` is emitted as literal text.
+
+EXAMPLES
+- `md_to_html("# Hello")` returns `"<h1>Hello</h1>"`.
+- `md_to_html("a\\n\\nb")` returns `"<p>a</p>\\n<p>b</p>"`.
+- `md_to_html("**bold**")` returns `"<p><strong>bold</strong></p>"`.
+- `md_to_html("- one\\n- two")` returns
+  `"<ul>\\n<li>one</li>\\n<li>two</li>\\n</ul>"`.
+- `md_to_html("[click](https://example.com)")` returns
+  `"<p><a href=\\"https://example.com\\">click</a></p>"`.
+- `md_to_html("a < b & c")` returns `"<p>a &lt; b &amp; c</p>"`.
+
+IMPLEMENTATION NOTES
+- This is the largest spec in the corpus. Plan a small structure:
+  a tokenizer/line-classifier, a block parser, an inline parser for
+  the bold/italic/code/link grammar, and an emitter.
+- It's fine — and expected — to declare helper functions, enums, and
+  structs at the crate root as private items. Only `md_to_html` must
+  be `pub`. The harness imports it as
+  `use model_solution::md_to_html;`.
+- Standard library only. No external crates.
+"""
