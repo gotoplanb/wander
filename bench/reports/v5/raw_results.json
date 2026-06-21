@@ -1,0 +1,61 @@
+{
+  "version": "v5",
+  "started_at": "2026-06-21T16:10:01Z",
+  "finished_at": "2026-06-21T16:23:03Z",
+  "fleet": ["gemma4:e4b (primary)", "gemma4:12b (shadow)"],
+  "specs_count": 2,
+  "models_count": 2,
+  "cells_count": 4,
+  "scope": "Narrow re-run of the 2 application specs only — measures whether conduct#43's 4000 → 8000 max_tokens raise unblocked markdown_subset on either Gemma. The 20 algorithm-spec cells from v4 are unchanged and not re-measured here.",
+  "notes": "Headline: raising max_tokens 4000 → 8000 did NOT unblock either Gemma on these specs. e4b broke through the old ceiling (5377 / 5274 tokens vs the 4000 wall) but produced badly-malformed code on both specs. 12b timed out at 300s on markdown_subset and produced different-malformed code on kv_store_cli. Critically, v4's kv_store_cli/12b cleanly passed 5/5/5 at 1411 tokens — v5's same prompt/same model produced 2056 tokens of broken code. The 4000-token cap was acting as a forcing function; raising it gave the models room to ramble into duplicated logic and unclosed delimiters. Per-call stochasticity dominates these specs.",
+  "results": [
+    {
+      "spec": "markdown_subset",
+      "model": "gemma4:e4b",
+      "kind": "job",
+      "gen_id": "c0bb7cac-5a47-4233-b7df-33cab2d0b875",
+      "eval_id": "38dac8e6-8f60-4bc0-b727-22c4522c2178",
+      "compile": 1,
+      "golden": null,
+      "property": null,
+      "tokens_out": 5377,
+      "note": "Output exceeded old 4000 cap (good — the cap raise worked at the wire level). Code is structurally broken: TWO parse_paragraph fns, TWO parse_inline_block fns, 8 compile errors."
+    },
+    {
+      "spec": "markdown_subset",
+      "model": "gemma4:12b",
+      "kind": "shadow",
+      "gen_id": "6b7a4abb-e113-477f-b33e-b259c36c0d9d",
+      "eval_id": null,
+      "compile": null,
+      "golden": null,
+      "property": null,
+      "gen_error": "ProviderTimeout: ollama timeout after 300.0s",
+      "note": "Gen never completed. 12b cannot produce a markdown_subset response within the 300s Ollama timeout, regardless of token budget."
+    },
+    {
+      "spec": "kv_store_cli",
+      "model": "gemma4:e4b",
+      "kind": "job",
+      "gen_id": "154fc70b-f3ee-4e4c-8a04-53c484b9bce0",
+      "eval_id": "4ba14518-c277-4d57-86fa-0be75ab0ce8a",
+      "compile": 1,
+      "golden": null,
+      "property": null,
+      "tokens_out": 5274,
+      "note": "Output exceeded old 4000 cap. 'unclosed delimiter' — deeply nested match-within-match never balances braces."
+    },
+    {
+      "spec": "kv_store_cli",
+      "model": "gemma4:12b",
+      "kind": "shadow",
+      "gen_id": "b4758bac-f22f-4ca4-a467-17081d5eeac7",
+      "eval_id": "5a55211d-ac37-4628-a84a-321183f39f01",
+      "compile": 1,
+      "golden": null,
+      "property": null,
+      "tokens_out": 2056,
+      "note": "Compile fail: 'non-exhaustive patterns: &_ not covered'. Source has 3 copies of the for-loop body (re-implementing then 'redoing internal logic'). Regression vs v4 where the same spec/model produced 1411 clean tokens and passed 5/5/5."
+    }
+  ]
+}

@@ -71,8 +71,14 @@ def seed(raw_path: Path, db_path: Path) -> int:
                     parent_conduct_job_id=pcid,
                     status=gen_status,
                     artifact_url=f"/output/{entry['gen_id']}.tar",
-                    error=None,
+                    error=entry.get("gen_error"),
                 )
+                # A null eval_id means the gen failed before code_eval ran
+                # (e.g. ProviderTimeout). Skip the eval row + dimensions
+                # for those cells — the report's per-spec view will show
+                # them as "—" naturally.
+                if entry.get("eval_id") is None:
+                    continue
                 eval_row_id = store.upsert_eval_job(
                     run_id=rid, gen_job_id=gen_row_id,
                     conduct_job_id=entry["eval_id"],
