@@ -12,10 +12,10 @@ Wander is the **client harness**; Conduct supplies the primitives (`code_generat
 |---|---|---|
 | `specs/` | [#3](https://github.com/gotoplanb/wander/issues/3) | shipped — 20 algorithm specs, schema-versioned |
 | `goldens/` | [#4](https://github.com/gotoplanb/wander/issues/4) | shipped — 118 Rust integration tests against the pinned `model_solution` crate |
-| `runner/` | [#2](https://github.com/gotoplanb/wander/issues/2) | shipped — `python -m bench.runner --spec <id>` |
+| `properties/` | [#5](https://github.com/gotoplanb/wander/issues/5) | shipped — 16 proptest suites; minimized counterexamples surfaced on failure |
+| `runner/` | [#2](https://github.com/gotoplanb/wander/issues/2) | shipped — `python -m bench.runner --spec <id>` or `--all` |
 | `runs/runs.db` | — | gitignored; SQLite store of `runs`, `gen_jobs` (primary + shadows), `eval_jobs`, `dimensions` |
-| `properties/` | [#5](https://github.com/gotoplanb/wander/issues/5) | pending — proptest property layer |
-| `reports/` | [#6](https://github.com/gotoplanb/wander/issues/6), [#8](https://github.com/gotoplanb/wander/issues/8) | pending — committed bench artifacts |
+| `reports/` | [#6](https://github.com/gotoplanb/wander/issues/6), [#8](https://github.com/gotoplanb/wander/issues/8) | v1 shipped; v2 pending Conduct routing change |
 
 Shared scaffolding (HTTP client to Conduct, mechanical scorers, judge rubric helpers) lives in `harness/`.
 
@@ -58,7 +58,9 @@ The runner uses exactly two Conduct task types:
 
   Conduct ships the artifact + overlay files to the sandbox, runs the commands, parses pass rates into 1-5 dimensions, and (since `apply_to_target=True`) writes them back to the target's `quality_scores` under `via="code-eval"`. The verdict comes back on `job.response` (JSON) and `job.metadata.code_eval` (dict).
 
-Dimensions delivered today: `compile`, `golden`. `property` joins once [#5](https://github.com/gotoplanb/wander/issues/5) lands and the proptest suites exist. The composite fold ([conduct#30](https://github.com/gotoplanb/conduct/issues/30)) is computed read-time by `/eval/compare` — the bench reads it from there, not from the runner.
+Dimensions delivered today: `compile`, `golden`, `property` (for the 16 specs with proptest suites). The composite fold ([conduct#30](https://github.com/gotoplanb/conduct/issues/30)) is computed read-time by `/eval/compare` — the bench reads it from there, not from the runner.
+
+When a property suite exists (see [`properties/`](properties/)), the runner attaches a second suite to the same `code_eval` job carrying a Cargo.toml overlay that pins `proptest = "1"` as a dev-dep. Conduct's sandbox fetches proptest, runs `cargo test --test <spec_id>_prop`, and captures the **minimized counterexample** on failure — that lands in the verdict's `suites.property.counterexample` field.
 
 ## Why one-job-with-force_shadows (not N independent submissions)
 

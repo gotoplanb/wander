@@ -34,6 +34,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from bench.goldens import load_golden
+from bench.properties import CARGO_TOML_WITH_PROPTEST, has_property, load_property
 from bench.specs import load_spec
 from harness.conduct import ConductClient, ConductError, Job, Shadow
 
@@ -96,9 +97,26 @@ def _artifact_url_from(job: Job) -> str | None:
 
 
 def _submit_eval(
-    client: ConductClient, *, target_job_id: str, golden_src: str, spec_id: str
+    client: ConductClient, *, target_job_id: str, golden_src: str, spec_id: str,
+    property_src: str | None = None,
 ) -> Job:
-    suites = [{"dimension": "golden", "files": {f"tests/{spec_id}.rs": golden_src}}]
+    """Build a code_eval payload with a golden suite and (when available) a
+    property suite. Property suites carry a Cargo.toml overlay that adds the
+    proptest dev-dep — Conduct's sandbox handles the rest, and marking the
+    suite `property: True` makes it capture the minimized counterexample on
+    failure (conduct#26)."""
+    suites: list[dict] = [
+        {"dimension": "golden", "files": {f"tests/{spec_id}.rs": golden_src}}
+    ]
+    if property_src is not None:
+        suites.append({
+            "dimension": "property",
+            "property": True,
+            "files": {
+                "Cargo.toml": CARGO_TOML_WITH_PROPTEST,
+                f"tests/{spec_id}_prop.rs": property_src,
+            },
+        })
     return client.create_job(
         task_type="code_eval",
         prompt="",  # code_eval is deterministic — no model, no prompt
@@ -141,6 +159,7 @@ def _eval_one_target(
     result: TargetResult,
     gen_row_id: int,
     golden_src: str,
+    property_src: str | None,
     spec_id: str,
     poll_timeout_s: float,
 ) -> None:
@@ -152,6 +171,7 @@ def _eval_one_target(
             target_job_id=result.conduct_job_id,
             golden_src=golden_src,
             spec_id=spec_id,
+            property_src=property_src,
         )
     except ConductError as e:
         log.error("[%s] eval submit failed: %s", result.model, e)
@@ -253,6 +273,7 @@ def run_spec(
     rule's `eval_shadow_models` in Conduct.
     """
     golden_src = load_golden(spec_id)  # fail fast if missing
+    property_src = load_property(spec_id) if has_property(spec_id) else None
 
     owned_client = client is None
     owned_store = store is None
@@ -304,7 +325,8 @@ def run_spec(
                 continue
             _eval_one_target(
                 client=client, store=store, run_id=run_id, result=t,
-                gen_row_id=gen_row_id, golden_src=golden_src, spec_id=spec_id,
+                gen_row_id=gen_row_id, golden_src=golden_src,
+                property_src=property_src, spec_id=spec_id,
                 poll_timeout_s=poll_timeout_s,
             )
 
