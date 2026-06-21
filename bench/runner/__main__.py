@@ -1,13 +1,14 @@
-"""CLI entrypoint: `python -m bench.runner --spec <id>`.
+"""CLI entrypoint: `python -m bench.runner --spec <id>` or `--all`.
 
 The fleet is Conduct's `code_generation` routing rule (preferred_model
 + eval_shadow_models). To change which models compete, change the rule
 — the harness has no model-selection knobs by design (clients don't
 pick models on Conduct).
 
-Prints a per-model summary after the run: primary first, then every
+Prints a per-model summary after each spec: primary first, then every
 shadow, with gen + eval status and dimensions. The SQLite store at
-bench/runs/runs.db keeps the persistent record.
+bench/runs/runs.db keeps the persistent record. Render the cross-spec
+report from there with `python -m bench.runner.report`.
 """
 
 from __future__ import annotations
@@ -16,6 +17,7 @@ import argparse
 import logging
 import sys
 
+from bench.specs import list_specs
 from harness.conduct import ConductError
 
 from .orchestrator import RunSummary, run_spec
@@ -25,15 +27,22 @@ def _parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="bench.runner",
         description=(
-            "Run one spec across the Conduct-configured fleet "
-            "(preferred_model + eval_shadow_models on the code_generation "
-            "routing rule), persist per-model dimensions to "
-            "bench/runs/runs.db, and print a summary."
+            "Run one spec (or every spec) across the Conduct-configured "
+            "fleet, persist per-model dimensions to bench/runs/runs.db, "
+            "and print a summary."
         ),
     )
-    p.add_argument(
-        "--spec", required=True,
+    group = p.add_mutually_exclusive_group(required=True)
+    group.add_argument(
+        "--spec",
         help="Spec id (filename stem under bench/specs/*.toml), e.g. bubble_sort",
+    )
+    group.add_argument(
+        "--all", action="store_true",
+        help=(
+            "Run every spec in bench/specs/*.toml in order. Continues on "
+            "individual-spec errors; final summary lists all runs."
+        ),
     )
     p.add_argument(
         "--poll-timeout-s", type=float, default=600.0,
@@ -83,12 +92,43 @@ def _print_summary(summary: RunSummary) -> None:
         print()
 
 
+def _run_all(poll_timeout_s: float) -> int:
+    specs = list_specs()
+    print(f"running {len(specs)} specs across the fleet...")
+    summaries: list[RunSummary] = []
+    errors: list[tuple[str, str]] = []
+    for spec in specs:
+        try:
+            summary = run_spec(spec.id, poll_timeout_s=poll_timeout_s)
+            summaries.append(summary)
+            _print_summary(summary)
+        except ConductError as e:
+            errors.append((spec.id, str(e)))
+            print(f"\n[{spec.id}] conduct error: {e}\n", file=sys.stderr)
+        except FileNotFoundError as e:
+            errors.append((spec.id, str(e)))
+            print(f"\n[{spec.id}] not found: {e}\n", file=sys.stderr)
+    print()
+    print(f"ran {len(summaries)} / {len(specs)} specs successfully")
+    if errors:
+        print(f"errors on {len(errors)}:")
+        for spec_id, msg in errors:
+            print(f"  - {spec_id}: {msg}")
+    print(
+        "\nrender the cross-spec report:\n"
+        "  python -m bench.runner.report --out bench/reports/v1/report.md"
+    )
+    return 0 if summaries else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     logging.basicConfig(
         level=logging.INFO if args.verbose else logging.WARNING,
         format="%(asctime)s %(levelname)s %(name)s — %(message)s",
     )
+    if args.all:
+        return _run_all(args.poll_timeout_s)
     try:
         summary = run_spec(
             args.spec, poll_timeout_s=args.poll_timeout_s,
@@ -100,8 +140,6 @@ def main(argv: list[str] | None = None) -> int:
         print(f"not found: {e}", file=sys.stderr)
         return 2
     _print_summary(summary)
-    # Exit 0 unless the primary itself failed at gen — partial runs (primary
-    # ok, some shadows failed) are still useful bench data.
     primary = summary.results[0] if summary.results else None
     if primary is None or primary.gen_status not in {"complete"}:
         return 1
