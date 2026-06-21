@@ -12,3 +12,9 @@ wanderer-session.json
 .env
 # Local bench results — runs are per-machine and rebuildable from Conduct.
 bench/runs/
+# DPO pipeline outputs — per-machine, rebuildable from Conduct's export.
+# Keep the dirs themselves (.gitkeep) so the scripts have somewhere to write.
+bench/dpo/datasets/*
+!bench/dpo/datasets/.gitkeep
+bench/dpo/checkpoints/*
+!bench/dpo/checkpoints/.gitkeep
