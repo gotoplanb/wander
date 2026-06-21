@@ -29,7 +29,8 @@ Difficulty = Literal["easy", "medium", "hard"]
 
 VALID_DIFFICULTIES: frozenset[str] = frozenset({"easy", "medium", "hard"})
 VALID_CATEGORIES: frozenset[str] = frozenset(
-    {"string", "sort", "search", "math", "dp", "graph", "basic"}
+    {"string", "sort", "search", "math", "dp", "graph", "basic",
+     "parser", "application"}
 )
 CURRENT_SCHEMA_VERSION = 1
 
@@ -182,8 +183,10 @@ src/lib.rs MUST contain ONLY the function from the SIGNATURE in the prompt:
 mutability, visibility (`pub`). The harness's golden tests import the \
 function as `use {CODE_GENERATION_CRATE_NAME}::<function_name>;` and break \
 on any signature drift.
-- One single public function. If you need helpers, inline them as nested \
-functions or closures inside its body.
+- Exactly one PUBLIC function — the one in the SIGNATURE. Helpers may be \
+declared as nested items inside its body OR as private items at the crate \
+root (private functions, types, enums, modules). Either layout is fine; \
+make sure only the spec's signature is `pub`.
 - Standard library only. No external crates. No `[dependencies]` section.
 - Must compile under stable Rust without warnings.
 - No `#[cfg(test)]`, no `mod tests`, no test code — the harness supplies \

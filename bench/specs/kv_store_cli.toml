@@ -1,0 +1,129 @@
+schema_version = 1
+id = "kv_store_cli"
+title = "In-memory KV store with TTL + CLI command dispatcher"
+difficulty = "hard"
+categories = ["application"]
+signature = "pub fn process_commands(commands: &[&str], times: &[u64]) -> Vec<String>"
+prompt = """
+Build a small in-memory key/value store with TTL-based expiry, driven
+through a CLI-style command interface. The function takes a batch of
+commands plus the wall-clock time each one runs at, and returns the
+output each command would produce.
+
+SIGNATURE (must match exactly):
+    pub fn process_commands(commands: &[&str], times: &[u64]) -> Vec<String>
+
+PARAMETERS
+- `commands[i]` is the text of one command (no trailing newline).
+- `times[i]` is the wall-clock time, in seconds since some epoch, at
+  which `commands[i]` runs. Times are monotonically non-decreasing.
+- The two slices have the same length.
+
+RETURN
+- `Vec<String>` of the same length as `commands`. Element `i` is the
+  output that `commands[i]` produced (without trailing newline).
+
+STATE
+- One mutable in-memory KV store lives for the duration of the call.
+  All commands operate on the same store.
+- A key with an expiry time `<=` the current time is considered expired
+  and behaves as if absent.
+
+COMMANDS
+
+  set <key> <value> [<ttl_secs>]
+    Store the value under the key.
+    Optional `ttl_secs` (positive integer) sets an expiry of
+    `current_time + ttl_secs`. Omitting it stores the value with no
+    expiry (it never expires on its own).
+    `set` on an existing key replaces its value AND replaces its
+    expiry (the old TTL is discarded, even if no new TTL is given).
+    Output: `OK`
+
+  get <key>
+    If the key exists and has not expired, output its value.
+    Otherwise output: `(nil)`
+    If the key exists but is expired at the current time, treat as
+    absent AND remove it from the store as a side effect.
+
+  del <key>
+    Remove the key. Output `1` if the key was present (regardless of
+    whether it was expired), `0` if it was absent.
+
+  list
+    Output one line per active (not-expired) key, in ascending sort
+    order, formatted as: `<key>=<value>`
+    Lines are joined by `\\n` in the single returned `String`. Expired
+    keys are not listed. Output `(empty)` if there are no active keys.
+
+UNKNOWN / MALFORMED INPUT
+- Unrecognized command name: output `ERR unknown command`.
+- Argument count wrong for the command: output
+  `ERR bad arg count`.
+- Non-integer or non-positive TTL in `set`: output `ERR bad ttl`.
+
+VALUE RULES
+- Keys and values are sequences of ASCII alphanumeric characters and
+  underscores only. The harness's golden tests never pass anything
+  else. You do not need to handle quoting or spaces in values.
+
+EXAMPLES (one command per line; show input and output)
+
+  Commands:
+    set foo bar          time 100
+    get foo              time 100
+  Output:
+    OK
+    bar
+
+  Commands:
+    set foo bar 5        time 100
+    get foo              time 102
+    get foo              time 200
+  Output:
+    OK
+    bar
+    (nil)
+
+  Commands:
+    set a 1              time 0
+    set b 2              time 0
+    list                 time 0
+  Output:
+    OK
+    OK
+    a=1
+    b=2
+  (last entry is one returned String: `\"a=1\\nb=2\"`)
+
+  Commands:
+    del missing          time 0
+    set k v              time 0
+    del k                time 0
+    del k                time 0
+  Output:
+    0
+    OK
+    1
+    0
+
+  Commands:
+    set k v 0            time 0
+  Output:
+    ERR bad ttl
+
+  Commands:
+    badcmd               time 0
+  Output:
+    ERR unknown command
+
+IMPLEMENTATION NOTES
+- Plan a small structure: a `KvStore` struct with an internal
+  `HashMap<String, (String, Option<u64>)>` (value + expiry), a parser
+  that turns a command line into an enum, a dispatcher.
+- It's fine — and expected — to declare helper types and functions at
+  the crate root as private items. Only `process_commands` must be
+  `pub`. The harness imports it as
+  `use model_solution::process_commands;`.
+- Standard library only. No external crates.
+"""
