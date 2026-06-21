@@ -2,54 +2,58 @@
 
 Closes the cognitive loop for the `code_generation` flywheel: Conduct
 accumulates scored primary + shadow submissions per prompt, this package
-exports the resulting preference pairs, fine-tunes the local primary
-(`gemma4:e4b`) toward higher-scoring outputs, and hands the checkpoint
-back to Conduct as a selectable model so the lift report (wander#8)
-can re-bench against it.
+exports the resulting preference pairs (via the regular client key —
+[conduct#41](https://github.com/gotoplanb/conduct/issues/41)), fine-tunes the
+local primary (`gemma4:e4b`) toward higher-scoring outputs, and publishes
+the checkpoint to HuggingFace Hub so Conduct's routing rule can reference
+it ([conduct#42](https://github.com/gotoplanb/conduct/issues/42)) for the
+lift report (wander#8).
 
 ## Pipeline
 
 ```
-Conduct                                            Wander                       Ollama host
-───────                                            ──────                       ───────────
-/datasets/preferences?method=composite  ──► export.py     ──► pairs.jsonl
-                                                │
-                                                ▼
-                                            prepare.py    ──► train.jsonl, valid.jsonl
-                                                │
-                                                ▼
-                                            train.py      ──► adapters.safetensors  (mlx-lm DPO)
-                                                │
-                                                ▼
-                                            fuse.py       ──► model.gguf + Modelfile
-                                                │
-                                                ▼
-                                            push.py       ─────────────────────────────► ollama create
-                                                                                          gemma4:e4b-wander-dpo-<version>
-                                                                                                    │
-                                                                                                    ▼
-                                                                              register in Conduct routing (conduct#32)
+Conduct                                Wander                            HuggingFace Hub
+───────                                ──────                            ───────────────
+/datasets/preferences          ──►   export.py    ──► pairs.jsonl
+(client key, own data only)             │
+                                        ▼
+                                    prepare.py    ──► train.jsonl, valid.jsonl
+                                        │
+                                        ▼
+                                    train.py      ──► adapters.safetensors  (mlx-lm DPO)
+                                        │
+                                        ▼
+                                    fuse.py       ──► model.gguf + Modelfile
+                                        │
+                                        ▼
+                                    push.py       ───────────────────►  gotoplanb/<repo>@<sha>
+                                                                                │
+       (when conduct#42 lands)                                                  ▼
+       Conduct config: huggingface://<repo>@<sha>  ◄──────────  pulls + serves
 ```
 
-Each stage is one module; each runs `python -m bench.dpo.<stage>`. Stages share a
-`<version>` slug — the date-stamped directory under `bench/dpo/datasets/` produced
-by `export.py`. Downstream stages take `--version <slug>` to find their inputs.
+Each stage is one module; each runs `python -m bench.dpo.<stage>`. Stages share
+a `<version>` slug — the date-stamped directory under `bench/dpo/datasets/`
+produced by `export.py`. Downstream stages take `--version <slug>` to find
+their inputs.
 
 ## Why this shape
 
-- **Conduct's job ends at the export.** Per the README split: Conduct owns
-  primitives + data; clients own orchestration + cognition. Training and the
-  resulting checkpoint registration are Wander-side.
+- **Identity-agnostic handoff via HF Hub.** Per [conduct#42](https://github.com/gotoplanb/conduct/issues/42),
+  Conduct treats `huggingface://<repo>@<rev>` as just another model source —
+  no special "register our checkpoint" handshake, same path it would use for
+  a community model. Publishing is the client's job; pulling + serving is
+  Conduct's. No SSH, no shared filesystem, no admin tokens.
+- **Client-key data export.** Per [conduct#41](https://github.com/gotoplanb/conduct/issues/41),
+  Wander pulls its preference pairs with its regular `CONDUCT_TOKEN` —
+  scoped to its own jobs, no admin token crosses the service boundary.
 - **Same-family preference pairs.** Per [conduct#40](https://github.com/gotoplanb/conduct/issues/40),
   the fleet is Gemma-only — `gemma4:e4b` (chosen-side baseline) vs `gemma4:12b`
-  (chosen-side ceiling). DPO learns to push e4b toward 12b-shaped outputs without
-  picking up cross-family quirks.
-- **mlx-lm, not TRL.** Native Apple Silicon, mature DPO support for Gemma since
-  Q3 2025, single-tool path from base weights → LoRA adapter → fused safetensors
-  → GGUF for Ollama.
-- **Inference stays on the Ollama host.** Training is heavy and happens here;
-  the resulting GGUF is shipped to the separate Mac that runs the fleet. This
-  machine never starts Ollama.
+  (chosen-side ceiling). DPO learns to push e4b toward 12b-shaped outputs
+  without picking up cross-family quirks.
+- **mlx-lm, not TRL.** Native Apple Silicon, mature DPO support for Gemma
+  since Q3 2025, single-tool path from base weights → LoRA adapter → fused
+  safetensors → GGUF for Ollama serving.
 
 ## Environment
 
@@ -58,10 +62,10 @@ In addition to the variables `harness/conduct.py` already reads
 
 | variable | used by | meaning |
 |---|---|---|
-| `CONDUCT_ADMIN_TOKEN` | `export.py` | `/datasets/preferences` is admin-only (it's a bulk data pull). The client key won't work — mint or read an admin key per `conduct/docs/auth.md`. |
-| `WANDER_DPO_BASE_MODEL` | `train.py`, `fuse.py` | HuggingFace repo id of the base model in MLX format (e.g. `mlx-community/gemma-3-4b-it-bf16`). The Ollama tag `gemma4:e4b` maps to whichever upstream Gemma the fleet is currently pinned to — check Conduct's routing config and pick the matching mlx-community conversion. |
-| `OLLAMA_SSH_HOST` | `push.py` | SSH target for the Ollama box, e.g. `dave@ollama-mbp.local`. `push.py` uses scp + `ssh … ollama create`. |
-| `OLLAMA_REMOTE_DIR` | `push.py` | Directory on the Ollama host where the GGUF + Modelfile land (default `~/wander-checkpoints`). |
+| `WANDER_DPO_BASE_MODEL` | `train.py`, `fuse.py` | HuggingFace repo id of the base model in MLX format (e.g. `mlx-community/gemma-3-4b-it-bf16`). Should match the upstream Gemma `gemma4:e4b` is pinned to in Conduct's routing. |
+| `HF_TOKEN` | `push.py` | Write-scoped HuggingFace token. Generate at <https://huggingface.co/settings/tokens>. |
+| `WANDER_DPO_HF_REPO` | `push.py` | Target HF model repo (e.g. `gotoplanb/gemma-e4b-wander-dpo`). |
+| `LLAMA_CPP_DIR` | `fuse.py` | Path to a local clone of [llama.cpp](https://github.com/ggerganov/llama.cpp), used for the GGUF conversion script. |
 
 ## Versioning
 
@@ -75,10 +79,14 @@ If you re-run `export.py` against the same Conduct state, the manifest hash
 matches and the export is skipped (idempotent). To force a new version, pass
 `--force` or `--version <slug>`.
 
+The `push.py` stage uploads to a per-version subdirectory of the HF repo and
+prints the resulting `huggingface://<repo>@<commit-sha>` reference — pin that
+exact SHA (not `main`) in Conduct's routing config for reproducible benches.
+
 ## End-to-end run
 
 ```bash
-# 1. Pull preference pairs (admin token; rows include all task_types unless filtered).
+# 1. Pull preference pairs (client key — own data only).
 python -m bench.dpo.export --task-type code_generation
 
 # 2. Apply Gemma chat template + 90/10 split.
@@ -90,14 +98,15 @@ python -m bench.dpo.train --version <slug>
 # 4. Fuse adapter into base + convert to GGUF + emit Modelfile.
 python -m bench.dpo.fuse --version <slug>
 
-# 5. Ship to the Ollama host and register the tag locally there.
-python -m bench.dpo.push --version <slug> --tag gemma4:e4b-wander-dpo-<slug>
+# 5. Publish the checkpoint to HF Hub.
+python -m bench.dpo.push --version <slug>
 
-# 6. (Outside this repo) ask Conduct to add the new tag to the
-#    code_generation routing rule per conduct#32 — open a routing-config issue
-#    with the tag name, host, and provenance pointer (manifest.json path).
+# 6. (Outside this repo, after conduct#42 lands) open a Conduct
+#    routing-config issue asking for the printed
+#    `huggingface://<repo>@<sha>` reference to be added to the
+#    code_generation rule's eval_shadow_models (or preferred_model).
 
-# 7. (Wander#8) re-run the bench against the new tag for the lift report.
+# 7. (wander#8) re-run the bench against the new model for the lift report.
 ```
 
 ## Install
@@ -116,6 +125,7 @@ core dep).
 
 - [wander#7](https://github.com/gotoplanb/wander/issues/7) — this issue
 - [conduct#31](https://github.com/gotoplanb/conduct/issues/31) — preference-pair extraction (closed)
-- [conduct#32](https://github.com/gotoplanb/conduct/issues/32) — register checkpoint as a selectable model (closed)
-- [conduct#40](https://github.com/gotoplanb/conduct/issues/40) — Gemma-only shadow fleet (in flight)
+- [conduct#40](https://github.com/gotoplanb/conduct/issues/40) — Gemma-only shadow fleet (closed)
+- [conduct#41](https://github.com/gotoplanb/conduct/issues/41) — client-key data export (closed; shipped)
+- [conduct#42](https://github.com/gotoplanb/conduct/issues/42) — HF model reference as routing target (open, deferred until wander#7 produces a checkpoint)
 - [conduct/docs/datasets.md](https://github.com/gotoplanb/conduct/blob/main/docs/datasets.md) — export contract

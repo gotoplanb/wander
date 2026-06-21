@@ -10,9 +10,10 @@ directory under ``bench/dpo/datasets/``::
 Idempotent: if a recent export's manifest hash matches the freshly-pulled
 content, the new export is skipped and the existing version is reused.
 
-Auth: uses ``CONDUCT_ADMIN_TOKEN`` (NOT the client ``CONDUCT_TOKEN``) — the
-preferences endpoint is admin-only because it's a bulk data pull across all
-clients of the tenant. See ``conduct/docs/auth.md``.
+Auth: uses ``CONDUCT_TOKEN`` (the same client key the rest of the harness
+uses). Per conduct#41, `/datasets/preferences` accepts a client key and
+scopes the export to that client's own jobs — no admin token crosses the
+service boundary, no cross-tenant leakage. See ``conduct/docs/datasets.md``.
 """
 
 from __future__ import annotations
@@ -44,13 +45,14 @@ def _stamp() -> str:
 
 def _resolve_auth() -> tuple[str, str]:
     base = os.environ.get("CONDUCT_BASE_URL")
-    token = os.environ.get("CONDUCT_ADMIN_TOKEN")
+    token = os.environ.get("CONDUCT_TOKEN")
     if not base:
         raise ExportError("CONDUCT_BASE_URL not set")
     if not token:
         raise ExportError(
-            "CONDUCT_ADMIN_TOKEN not set — /datasets/preferences is admin-only. "
-            "Mint or read an admin key per conduct/docs/auth.md."
+            "CONDUCT_TOKEN not set — mint a client API key (cdt_<random>) "
+            "per conduct/docs/auth.md; /datasets/preferences scopes the "
+            "export to this client's own jobs."
         )
     return base.rstrip("/"), token
 
