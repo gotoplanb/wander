@@ -1,0 +1,455 @@
+{
+  "version": "v4",
+  "started_at": "2026-06-21T13:41:30Z",
+  "finished_at": "2026-06-21T14:06:04Z",
+  "fleet": [
+    "gemma4:e4b (primary)",
+    "gemma4:12b (shadow)"
+  ],
+  "specs_count": 22,
+  "models_count": 2,
+  "cells_count": 44,
+  "notes": "v4 \u2014 full 22 specs (20 algorithm + 2 application: markdown_subset, kv_store_cli) \u00d7 2 models. First run on the expanded corpus designed to create headroom for DPO.",
+  "results": [
+    {
+      "spec": "count_vowels",
+      "model": "gemma4:e4b",
+      "kind": "job",
+      "gen_id": "84a6a84d-4c03-4fb9-9426-dbcec42a5eb7",
+      "eval_id": "9ea58f1f-5659-4360-a290-bb6da3d9918b",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "count_vowels",
+      "model": "gemma4:12b",
+      "kind": "shadow",
+      "gen_id": "fa046f2f-6ef7-4fde-9cae-223cbadf14ea",
+      "eval_id": "b2b11f7c-1195-42ad-ac99-07a2465ed844",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "factorial",
+      "model": "gemma4:e4b",
+      "kind": "job",
+      "gen_id": "aead3140-aed6-438e-9066-0ae294cb0016",
+      "eval_id": "94027e94-ed0b-4962-8f9c-ffa72f9a1c64",
+      "compile": 5,
+      "golden": 5,
+      "property": null
+    },
+    {
+      "spec": "factorial",
+      "model": "gemma4:12b",
+      "kind": "shadow",
+      "gen_id": "7c9df1ac-1900-4df8-ab93-eef6e1400069",
+      "eval_id": "f3b33ebf-215b-4b8e-b8f9-f14bb1828540",
+      "compile": 5,
+      "golden": 5,
+      "property": null
+    },
+    {
+      "spec": "fibonacci_nth",
+      "model": "gemma4:e4b",
+      "kind": "job",
+      "gen_id": "3fbbd419-9b4c-48dc-9fad-5a803ebbd090",
+      "eval_id": "59df6d0d-c70c-498f-8ec6-90ea20fdfa09",
+      "compile": 5,
+      "golden": 5,
+      "property": null
+    },
+    {
+      "spec": "fibonacci_nth",
+      "model": "gemma4:12b",
+      "kind": "shadow",
+      "gen_id": "aeac8318-6b97-4c4c-b4e3-25afdaa2939d",
+      "eval_id": "923f14ad-aea0-4513-a578-780d913ec287",
+      "compile": 5,
+      "golden": 5,
+      "property": null
+    },
+    {
+      "spec": "fizzbuzz",
+      "model": "gemma4:e4b",
+      "kind": "job",
+      "gen_id": "e5a0904e-d400-47df-831b-b060d9740c6b",
+      "eval_id": "a0dba8ff-31a4-467a-b4a3-ce417ffd9926",
+      "compile": 5,
+      "golden": 5,
+      "property": null
+    },
+    {
+      "spec": "fizzbuzz",
+      "model": "gemma4:12b",
+      "kind": "shadow",
+      "gen_id": "6ce98469-37fd-484e-be5c-024d7120e9a9",
+      "eval_id": "455a2468-02ff-46f2-bbd7-d6a25eb45ffa",
+      "compile": 5,
+      "golden": 5,
+      "property": null
+    },
+    {
+      "spec": "is_palindrome",
+      "model": "gemma4:e4b",
+      "kind": "job",
+      "gen_id": "d5c7c0df-591c-4170-902e-bd5f4ca0097c",
+      "eval_id": "0dbdd33f-e968-4ba7-8288-bedef7faadff",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "is_palindrome",
+      "model": "gemma4:12b",
+      "kind": "shadow",
+      "gen_id": "6b1e0e83-6fd5-43d9-91ea-d74bbf3418d6",
+      "eval_id": "57b07df4-8350-45a4-a530-26f6bcc60d6c",
+      "compile": 5,
+      "golden": 4,
+      "property": 5
+    },
+    {
+      "spec": "max_in_slice",
+      "model": "gemma4:e4b",
+      "kind": "job",
+      "gen_id": "83abe7a4-c4c1-4e57-b31e-8ccccd73a013",
+      "eval_id": "d087fe2b-6613-4ead-a793-b9a4628f878d",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "max_in_slice",
+      "model": "gemma4:12b",
+      "kind": "shadow",
+      "gen_id": "53fc174d-6c3b-4d31-b8af-5eb84ce64bda",
+      "eval_id": "42fa063c-65c6-406e-af24-305f4298f0c5",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "reverse_string",
+      "model": "gemma4:e4b",
+      "kind": "job",
+      "gen_id": "e72cf110-310a-4a39-a3a3-db2393da2f52",
+      "eval_id": "c897f27c-e2fc-4cf0-ae94-80441b5fefaa",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "reverse_string",
+      "model": "gemma4:12b",
+      "kind": "shadow",
+      "gen_id": "d5be6f49-f810-44a9-bc31-62bac6d390ec",
+      "eval_id": "3e12a73d-0e7b-4b39-8bbf-dea135399eff",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "sum_to_n",
+      "model": "gemma4:e4b",
+      "kind": "job",
+      "gen_id": "f0de4b0e-cd6b-4a6c-9c27-8d879ad8ba7d",
+      "eval_id": "e81260f8-4812-49c3-a85d-8620763f7f59",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "sum_to_n",
+      "model": "gemma4:12b",
+      "kind": "shadow",
+      "gen_id": "b141b049-e5e9-4df3-968d-970b4418125f",
+      "eval_id": "9e2438a5-84c1-43bf-90a0-49a2ae2e0f35",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "binary_search_sorted",
+      "model": "gemma4:e4b",
+      "kind": "job",
+      "gen_id": "15c41d28-e57c-48e4-8b05-1f697bbb9e11",
+      "eval_id": "42a911e2-ba91-4a74-999e-a4848a35fc6e",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "binary_search_sorted",
+      "model": "gemma4:12b",
+      "kind": "shadow",
+      "gen_id": "fdb83d80-9672-49eb-be24-73c95901db17",
+      "eval_id": "c4016ea3-3c01-4ba4-b9cf-73f1e866fef0",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "bubble_sort",
+      "model": "gemma4:e4b",
+      "kind": "job",
+      "gen_id": "30180e2c-92b5-49e1-9a60-d9cea8befabb",
+      "eval_id": "51dccc82-5a08-4035-b4d1-ab570bcfbb2b",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "bubble_sort",
+      "model": "gemma4:12b",
+      "kind": "shadow",
+      "gen_id": "ffacaefc-8992-44fa-81c3-60df23c545e1",
+      "eval_id": "48fdc76e-a128-4dae-ba8e-293df68e9f54",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "insertion_sort",
+      "model": "gemma4:e4b",
+      "kind": "job",
+      "gen_id": "27276e34-e5c0-4251-ac2a-704fab5a41e2",
+      "eval_id": "19cb15ff-21c8-4894-ae62-325c10b41ae8",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "insertion_sort",
+      "model": "gemma4:12b",
+      "kind": "shadow",
+      "gen_id": "a364f752-e375-4155-bf6d-405416df2368",
+      "eval_id": "a5c1de2b-097d-4783-92bc-22eddbb69d9c",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "is_anagram",
+      "model": "gemma4:e4b",
+      "kind": "job",
+      "gen_id": "281b9ff5-c820-4f2f-bd9f-402d64926a9f",
+      "eval_id": "f19a8e6d-f2c4-43da-a6b7-1c14e6b831d1",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "is_anagram",
+      "model": "gemma4:12b",
+      "kind": "shadow",
+      "gen_id": "3f57d626-7a37-4b87-8ad7-c455d5b980a3",
+      "eval_id": "884dae66-0321-412c-9ab1-abe059b9881b",
+      "compile": 5,
+      "golden": 4,
+      "property": 4
+    },
+    {
+      "spec": "longest_common_prefix",
+      "model": "gemma4:e4b",
+      "kind": "job",
+      "gen_id": "63c4eca1-0498-425f-8ea6-6b063007b632",
+      "eval_id": "fae7141b-9a3d-4ac6-bcde-2d7824d9de35",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "longest_common_prefix",
+      "model": "gemma4:12b",
+      "kind": "shadow",
+      "gen_id": "f111df22-f5b6-4541-8057-225eb4ff4f8d",
+      "eval_id": "80d1395b-80d9-444c-8792-d3e140af3770",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "mergesort",
+      "model": "gemma4:e4b",
+      "kind": "job",
+      "gen_id": "c0a6720f-747f-4ab7-ba5b-7d4adcf250be",
+      "eval_id": "aeba0d86-0dd5-4e0a-9f33-ca6fb266158d",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "mergesort",
+      "model": "gemma4:12b",
+      "kind": "shadow",
+      "gen_id": "105ae67c-05aa-45a6-82ce-6fac37a3457b",
+      "eval_id": "e25c075c-b130-47f8-8636-de5a625b1be2",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "quicksort",
+      "model": "gemma4:e4b",
+      "kind": "job",
+      "gen_id": "b95de6c9-fe89-4646-a762-4586f05d4bb4",
+      "eval_id": "36ddcc5b-b04f-4d5c-9dd0-f61f3d01208b",
+      "compile": 1,
+      "golden": null,
+      "property": null
+    },
+    {
+      "spec": "quicksort",
+      "model": "gemma4:12b",
+      "kind": "shadow",
+      "gen_id": "d1d54ef8-ccc9-4f12-bfd3-5d5149999530",
+      "eval_id": "6354b138-42b5-45b7-b694-c62c53570e76",
+      "compile": 1,
+      "golden": null,
+      "property": null
+    },
+    {
+      "spec": "roman_to_int",
+      "model": "gemma4:e4b",
+      "kind": "job",
+      "gen_id": "5fde0ad9-ba3b-4c05-9491-62d72be28532",
+      "eval_id": "84ca41fb-058b-4b5e-9753-5a7493a51092",
+      "compile": 1,
+      "golden": null,
+      "property": null
+    },
+    {
+      "spec": "roman_to_int",
+      "model": "gemma4:12b",
+      "kind": "shadow",
+      "gen_id": "c7fc028b-399e-4aaf-9808-db22131d35e9",
+      "eval_id": "228c671a-cb40-4e65-9f3f-0abc50a760ee",
+      "compile": 5,
+      "golden": 5,
+      "property": null
+    },
+    {
+      "spec": "bfs_shortest_path",
+      "model": "gemma4:e4b",
+      "kind": "job",
+      "gen_id": "367f0b1f-91bc-4c10-88d5-50c33a161b12",
+      "eval_id": "3696634f-3281-432c-b5b6-08791df7c3b6",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "bfs_shortest_path",
+      "model": "gemma4:12b",
+      "kind": "shadow",
+      "gen_id": "277940f6-c5b4-4e9f-a0d6-584b4c1a283d",
+      "eval_id": "5ab1a912-07b8-4ebb-8f36-42eaa6e8c977",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "dijkstra_shortest_path",
+      "model": "gemma4:e4b",
+      "kind": "job",
+      "gen_id": "eca3db8d-dc8c-483e-bfbe-39c094946785",
+      "eval_id": "20a9da20-cce4-4fb7-950e-673d1442a250",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "dijkstra_shortest_path",
+      "model": "gemma4:12b",
+      "kind": "shadow",
+      "gen_id": "8fccfcfe-2503-49e5-b9ea-5d30e44cddf8",
+      "eval_id": "096c3d1f-7bd6-4111-a9e4-f7bd03ef6fd8",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "levenshtein_distance",
+      "model": "gemma4:e4b",
+      "kind": "job",
+      "gen_id": "a4b637ba-a93d-43f7-b1fc-df030bad31e6",
+      "eval_id": "506065ec-ff95-450f-a62c-b372b9a2ec30",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "levenshtein_distance",
+      "model": "gemma4:12b",
+      "kind": "shadow",
+      "gen_id": "33743f09-fea7-4ec5-89f9-dc090db6228c",
+      "eval_id": "beacc5df-578b-4e46-92a5-8c90b96c05eb",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "longest_common_subsequence",
+      "model": "gemma4:e4b",
+      "kind": "job",
+      "gen_id": "5142cfbd-ee75-4ea9-bb88-9daa9f0c9e67",
+      "eval_id": "35fb631b-2f47-45bc-a2a7-b8dbd26f6696",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "longest_common_subsequence",
+      "model": "gemma4:12b",
+      "kind": "shadow",
+      "gen_id": "65089ee9-1560-486e-b570-39a12d095bbf",
+      "eval_id": "73f9a4e1-3ea8-4235-bb42-ff6e80ca16b2",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    },
+    {
+      "spec": "markdown_subset",
+      "model": "gemma4:e4b",
+      "kind": "job",
+      "gen_id": "2dcc944a-c220-4990-9be8-e4ba42d308c6",
+      "eval_id": "38fb07bb-d6e3-4252-8989-9e9a3f226a26",
+      "compile": 1,
+      "golden": null,
+      "property": null
+    },
+    {
+      "spec": "markdown_subset",
+      "model": "gemma4:12b",
+      "kind": "shadow",
+      "gen_id": "fafe7045-b9ff-4c3a-96b3-c7cdb0a170db",
+      "eval_id": "d4361c34-e65c-43df-b0af-ea7c5fefad31",
+      "compile": 1,
+      "golden": null,
+      "property": null
+    },
+    {
+      "spec": "kv_store_cli",
+      "model": "gemma4:e4b",
+      "kind": "job",
+      "gen_id": "300b70ea-4f6a-47c7-9b26-2eed83609b50",
+      "eval_id": "356e3802-3b87-493d-82f8-212d5fa11270",
+      "compile": 1,
+      "golden": null,
+      "property": null
+    },
+    {
+      "spec": "kv_store_cli",
+      "model": "gemma4:12b",
+      "kind": "shadow",
+      "gen_id": "8dffb65d-21fe-4e70-8548-0ea7c045e8b7",
+      "eval_id": "b29b0e73-9b17-4f5c-a62b-783f9781abfe",
+      "compile": 5,
+      "golden": 5,
+      "property": 5
+    }
+  ]
+}
