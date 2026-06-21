@@ -88,6 +88,11 @@ def seed(raw_path: Path, db_path: Path) -> int:
                         eval_job_id=eval_row_id, name="golden",
                         score=float(entry["golden"]),
                     )
+                if entry.get("property") is not None:
+                    store.record_dimension(
+                        eval_job_id=eval_row_id, name="property",
+                        score=float(entry["property"]),
+                    )
             store.finish_run(rid, finished_at=raw["finished_at"])
 
         return 0
